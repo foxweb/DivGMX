@@ -1,4 +1,4 @@
-# Базовая конфигурация
+# Базовая конфигурация (сборка 20161204)
 Конфигурация для DivGMX, расширяющая аппаратные возможности ZX Spectrum и клонов.
 
 ####Назначение:
@@ -13,14 +13,21 @@
 - Nemo Bus
 
 ####Поддержка в конфигурации:
-- HDMI
+- HDMI 640x480@60Hz
 - Audio out
-- Kempston joystick
 - Kempston mouse
-- DivMMC
+- DivMMC (ROM 8K + RAM 512K) NMI кнопка на плате DivGMX
 - SounDrive
 - Turbo Sound
 - Z-Controller
 
+При подключенной USB клавиатуре:
+F6 = DivMMC/Z-Controller (по включению)
+F7 = USB Keyboard/ZX Spectrum Keyboard (по включению) 
 
+
+ZXM-Phoenix 1024K
 Вывод A25 (X1) нужно изолировать (можно наклеить тонкую полоску скотча) и установить перемычку JP1 для возможности отключения ROM на плате ZXM-Phoenix 1024K REV01.
+
+ZX Spectrum +3
+Установить перемычку JP1
