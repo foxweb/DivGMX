@@ -1,5 +1,5 @@
--------------------------------------------------------------------[27.11.2016]
--- Basic build 20161127
+-------------------------------------------------------------------[04.12.2016]
+-- FPGA SoftCore - Basic build 20161204
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
@@ -201,7 +201,11 @@ signal kb_fn		: std_logic_vector(12 downto 1);
 signal key		: std_logic_vector(12 downto 1) := "000000000000";
 
 signal ena_1_75mhz	: std_logic;
+--signal ena_0_4375mhz	: std_logic;
 signal ena_cnt		: std_logic_vector(5 downto 0);
+-- I2C
+--signal i2c_do_bus	: std_logic_vector(7 downto 0);
+--signal i2c_wr		: std_logic;
 
 --Вывод изображения на HDMI со звуком +
 --DivMMC/Z-Controller +
@@ -298,47 +302,46 @@ port map (
 -- SDRAM Controller
 U7: entity work.sdram
 port map (
-	CLK		=> clk_sdr,
-	A		=> "0000" & ram_addr & a_i(12 downto 0),
-	DI		=> d_i,
-	DO		=> sdr_do_bus,
-	DM	 	=> '0',
-	WR		=> sdr_wr,
-	RD		=> sdr_rd,
-	RFSH		=> sdr_rfsh,
-	RFSHREQ		=> open,
-	IDLE		=> open,
-	CK		=> DRAM_CLK,
-	CKE		=> open,
-	RAS_n		=> DRAM_NRAS,
-	CAS_n		=> DRAM_NCAS,
-	WE_n		=> DRAM_NWE,
-	DQM		=> DRAM_DQM,
-	BA1		=> DRAM_BA(1),
-	BA0		=> DRAM_BA(0),
-	MA		=> DRAM_A,
-	DQ		=> DRAM_DQ);	
-	
+	I_CLK		=> clk_sdr,
+	-- Memory port
+	I_ADDR		=> "0000" & ram_addr & a_i(12 downto 0),
+	I_DATA		=> d_i,
+	O_DATA		=> sdr_do_bus,
+	I_WR		=> sdr_wr,
+	I_RD		=> sdr_rd,
+	I_RFSH		=> sdr_rfsh,
+	O_IDLE		=> open,
+	-- SDRAM Pin
+	O_CLK		=> DRAM_CLK,
+	O_RAS		=> DRAM_NRAS,
+	O_CAS		=> DRAM_NCAS,
+	O_WE		=> DRAM_NWE,
+	O_DQM		=> DRAM_DQM,
+	O_BA		=> DRAM_BA,
+	O_MA		=> DRAM_A,
+	IO_DQ		=> DRAM_DQ);
+
 -- DIVMMC Interface
 U8: entity work.divmmc
 port map (
-	CLK		=> clk_bus,
-	EN		=> kb_fn(6),
-	RESET_N		=> reset_n_i,
-	ADDR		=> a_i,
-	DI		=> d_i,
-	DO		=> divmmc_do,
-	WR_N		=> wr_n_i,
-	RD_N		=> rd_n_i,
-	IORQ_N		=> iorq_n_i,
-	MREQ_N		=> mreq_n_i,
-	M1_N		=> m1_n_i,
-	E3REG		=> divmmc_e3reg,
-	AMAP		=> divmmc_amap,
-	CS_N		=> divmmc_ncs,
-	SCLK		=> divmmc_sclk,
-	MOSI		=> divmmc_mosi,
-	MISO		=> DATA0);	
+	I_CLK		=> clk_bus,
+	I_CS		=> kb_fn(6),
+	I_RESET		=> not reset_n_i,
+	I_ADDR		=> a_i,
+	I_DATA		=> d_i,
+	O_DATA		=> divmmc_do,
+	I_WR_N		=> wr_n_i,
+	I_RD_N		=> rd_n_i,
+	I_IORQ_N	=> iorq_n_i,
+	I_MREQ_N	=> mreq_n_i,
+	I_M1_N		=> m1_n_i,
+	I_RFSH_N	=> rfsh_n_i,
+	O_E3REG		=> divmmc_e3reg,
+	O_AMAP		=> divmmc_amap,
+	O_CS_N		=> divmmc_ncs,
+	O_SCLK		=> divmmc_sclk,
+	O_MOSI		=> divmmc_mosi,
+	I_MISO		=> DATA0);	
 
 -- Soundrive
 U9: entity work.soundrive
@@ -369,22 +372,12 @@ port map (
 	I_RESET_N	=> reset_n_i,
 	O_SEL		=> ssg_sel,
 	-- ssg0
-	I_SSG0_IOA	=> (others => '1'),
-	O_SSG0_IOA	=> open,
-	I_SSG0_IOB	=> (others => '1'),
-	O_SSG0_IOB	=> open,
 	O_SSG0_DA	=> ssg0_do_bus,
-	O_SSG0_AUDIO	=> open,
 	O_SSG0_AUDIO_A	=> ssg0_a,
 	O_SSG0_AUDIO_B	=> ssg0_b,
 	O_SSG0_AUDIO_C	=> ssg0_c,
 	-- ssg1
-	I_SSG1_IOA	=> (others => '1'),
-	O_SSG1_IOA	=> open,
-	I_SSG1_IOB	=> (others => '1'),
-	O_SSG1_IOB	=> open,
 	O_SSG1_DA	=> ssg1_do_bus,
-	O_SSG1_AUDIO	=> open,
 	O_SSG1_AUDIO_A	=> ssg1_a,
 	O_SSG1_AUDIO_B	=> ssg1_b,
 	O_SSG1_AUDIO_C	=> ssg1_c);
@@ -451,8 +444,23 @@ port map(
 	O_KEYBOARD_JOYKEYS	=> open,--kb_joy_bus,
 	O_KEYBOARD_CTLKEYS	=> open);--kb_soft_bus);
 
+-- I2C Controller
+--U15: entity work.i2c
+--port map (
+--	I_RESET			=> not reset_n_i,
+--	I_CLK			=> clk_bus,
+--	I_ENA			=> ena_0_4375mhz,
+--	I_ADDR			=> a_i(4),
+--	I_DATA			=> d_i,
+--	O_DATA			=> i2c_do_bus,
+--	I_WR			=> i2c_wr,
+--	IO_I2C_SCL		=> I2C_SCL,
+--	IO_I2C_SDA		=> I2C_SDA);
+
+	
 -------------------------------------------------------------------------------	
 -- F6 = Z-Controller/DivMMC
+-- F7 = Keyboard USB/Standart
 process (clk_bus, key, kb_fn_bus, kb_fn)
 begin
 	if (clk_bus'event and clk_bus = '1') then
@@ -464,16 +472,21 @@ begin
 end process;
 
 -------------------------------------------------------------------------------	
+-- I2C
+--i2c_wr <= '1' when (a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100" and wr_n_i = '0' and iorq_n_i = '0') else '0';		-- I2C Port xx8C/xx9C[xxxxxxxx_100n1100]
+
+-------------------------------------------------------------------------------	
 -- Z-Controller	
 zc_wr 	<= '1' when (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 6) = "01" and a_i(4 downto 0) = "10111") else '0';
 zc_rd 	<= '1' when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 6) = "01" and a_i(4 downto 0) = "10111") else '0';
 	
 -------------------------------------------------------------------------------
 -- SDRAM
-sdr_wr <= '1' when mreq_n_i = '0' and wr_n_i = '0' and mux = "1001" else '0';
+sdr_wr <= '1' when mreq_n_i = '0' and wr_n_i = '0' else '0';
 sdr_rd <= not (mreq_n_i or rd_n_i);
 sdr_rfsh <= not rfsh_n_i;
 
+-------------------------------------------------------------------------------
 -- Clock
 process (clk_bus)
 begin
@@ -483,6 +496,7 @@ begin
 end process;
 
 ena_1_75mhz <= ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
+--ena_0_4375mhz <= ena_cnt(5) and ena_cnt(4) and ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
 	
 --areset <= not reset_n_i;	-- глобальный сброс
 
@@ -490,27 +504,6 @@ ena_1_75mhz <= ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
 -- Video
 vram_scr <= '1' when (ram_addr = "00001110") else '0';
 vram_wr  <= '1' when (mreq_n_i = '0' and wr_n_i = '0' and ((ram_addr = "00001010") or (ram_addr = "00001110"))) else '0';
-
-------------------------------------------------------------------------------
--- Селектор
-mux <= ((divmmc_amap or divmmc_e3reg(7)) and kb_fn(6)) & a_i(15 downto 13);
-
-process (mux, port_7ffd_reg, ram_addr, divmmc_e3reg)
-begin
-	case mux is
-		when "0000"|"0001" => ram_addr <= "10000001";
-		when "1000" => ram_addr <= "10000000";						-- ESXDOS ROM 0000-1FFF
-		when "1001" => ram_addr <= "01" & divmmc_e3reg(5 downto 0);			-- ESXDOS RAM 2000-3FFF
-	
-		when "0010"|"1010" => ram_addr <= "00001010";					-- Seg1 RAM 4000-5FFF
-		when "0011"|"1011" => ram_addr <= "00001011";					-- Seg1 RAM 6000-7FFF
-		when "0100"|"1100" => ram_addr <= "00000100";					-- Seg2 RAM 8000-9FFF
-		when "0101"|"1101" => ram_addr <= "00000101";					-- Seg2 RAM A000-BFFF
-		when "0110"|"1110" => ram_addr <= "0000" & port_7ffd_reg(2 downto 0) & '0';	-- Seg3 RAM C000-DFFF
-		when "0111"|"1111" => ram_addr <= "0000" & port_7ffd_reg(2 downto 0) & '1';	-- Seg3 RAM E000-FFFF
-		when others => null;
-	end case;
-end process;
 
 -------------------------------------------------------------------------------
 -- SD DIVMMC/Z-Controller/SPIFLASH
@@ -537,18 +530,62 @@ begin
 	end if;
 end process;
 
-selector <=	X"0" when (mreq_n_i = '0' and rd_n_i = '0' and ram_addr = "10000000") else
-		X"1" when (mreq_n_i = '0' and rd_n_i = '0' and ram_addr(7 downto 6) = "01") else
-		X"2" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"EB" and kb_fn(6) = '1') else			-- DivMMC
-		X"3" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '0') else				-- TurboSound
-		X"4" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '1') else				-- TurboSound
-		X"5" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 6) = "01" and a_i(4 downto 0) = "10111" and kb_fn(6) = '0') else 	-- Z-Controller
-		X"6" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else						-- Mouse key
-		X"7" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else						-- Mouse x
-		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else						-- Mouse y
-		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else						-- Read port #7FFD
-		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"FE") else					-- Read port #xxFE Keyboard
+------------------------------------------------------------------------------
+-- Селектор
+selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) = "00" and divmmc_amap = '0' and divmmc_e3reg(7) = '0') else			-- ROM #0000-#3FFF
+		X"1" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "000" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS ROM #0000-#1FFF
+		X"2" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "001" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS RAM #2000-#3FFF
+		-- Ports
+		X"3" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"FE" and kb_fn(7) = '1') else							-- Read port #xxFE Keyboard
+		X"4" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"EB" and kb_fn(6) = '1') else							-- DivMMC ESXDOS port
+		X"5" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '0') else								-- TurboSound SSG0
+		X"6" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '1') else								-- TurboSound SSG1
+		X"7" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 6) = "01" and a_i(4 downto 0) = "10111" and kb_fn(6) = '0') else 			-- Z-Controller
+		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else										-- Mouse port key, z
+		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else										-- Mouse port x
+		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else										-- Mouse port y
+		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else										-- Read port #7FFD
+--		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
 		(others => '1');
+
+process (selector, rom_do, divmmc_do, sdr_do_bus, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms_z, ms_b, ms_x, ms_y, port_7ffd_reg, kb_do_bus)
+begin
+	case selector is
+--		when X"0" => BUS_D <= rom_do;										-- ROM
+		when X"1" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- ROM DivMMC ESXDOS
+		when X"2" => BUS_D <= sdr_do_bus; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';		-- SDRAM
+		-- Ports
+		when X"3" => BUS_D <= "111" & kb_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
+		when X"4" => BUS_D <= divmmc_do; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- DivMMC ESXDOS port
+		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
+		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
+		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
+		when X"8" => BUS_D <= ms_z(3 downto 0) & '1' & not ms_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse port key, z
+		when X"9" => BUS_D <= ms_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse port x
+		when X"A" => BUS_D <= not ms_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse port y
+		when X"B" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
+--		when X"C" => BUS_D <= i2c_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- I2C
+		when others => BUS_D <= (others => 'Z'); BUS_NROMOE <= '0'; BUF_DIR(1) <= '0'; BUS_NIORQGE <= '0';
+	end case;
+end process;
+		
+mux <= ((divmmc_amap or divmmc_e3reg(7)) and kb_fn(6)) & a_i(15 downto 13);
+
+process (mux, port_7ffd_reg, ram_addr, divmmc_e3reg)
+begin
+	case mux is
+		when "0000"|"0001" => ram_addr <= "10000001";
+		when        "1000" => ram_addr <= "10000000";					-- ESXDOS ROM 0000-1FFF
+		when        "1001" => ram_addr <= "01" & divmmc_e3reg(5 downto 0);		-- ESXDOS RAM 2000-3FFF
+		when "0010"|"1010" => ram_addr <= "00001010";					-- Seg1 RAM 4000-5FFF
+		when "0011"|"1011" => ram_addr <= "00001011";					-- Seg1 RAM 6000-7FFF
+		when "0100"|"1100" => ram_addr <= "00000100";					-- Seg2 RAM 8000-9FFF
+		when "0101"|"1101" => ram_addr <= "00000101";					-- Seg2 RAM A000-BFFF
+		when "0110"|"1110" => ram_addr <= "0000" & port_7ffd_reg(2 downto 0) & '0';	-- Seg3 RAM C000-DFFF
+		when "0111"|"1111" => ram_addr <= "0000" & port_7ffd_reg(2 downto 0) & '1';	-- Seg3 RAM E000-FFFF
+		when others => null;
+	end case;
+end process;
 
 -------------------------------------------------------------------------------
 -- Audio
@@ -561,9 +598,7 @@ audio_r	<= ("000" & beeper & "00000") + ("000" & ssg0_c & "00000") + ("000" & ss
 BUS_NINT	<= '1';
 BUS_NWAIT	<= '1';
 BUS_NBUSRQ	<= '1';
-BUS_NROMOE	<= '1' when selector = X"0" or selector = X"1" else '0';
-BUS_NIORQGE	<= '0' when selector = X"0" or selector = X"1" or selector = X"A" or selector = X"F" else '1';	-- Read system port #xxFE On
-BUF_DIR		<= "00" when selector = X"F" else "10";
+BUF_DIR(0)	<= '0';
 BUS_A		<= (others => 'Z');
 BUS_NMREQ	<= 'Z';
 BUS_NIORQ	<= 'Z';
@@ -572,24 +607,6 @@ BUS_NWR		<= 'Z';
 BUS_NM1		<= 'Z';
 BUS_NRFSH	<= 'Z';
 
-process (selector, rom_do, divmmc_do, sdr_do_bus, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms_z, ms_b, ms_x, ms_y, port_7ffd_reg, kb_do_bus)
-begin
-	case selector is
-		when X"0" => BUS_D <= rom_do;
-		when X"1" => BUS_D <= sdr_do_bus;
-		when X"2" => BUS_D <= divmmc_do;
-		when X"3" => BUS_D <= ssg0_do_bus;
-		when X"4" => BUS_D <= ssg1_do_bus;
-		when X"5" => BUS_D <= zc_do_bus;
-		when X"6" => BUS_D <= ms_z(3 downto 0) & '1' & not ms_b(2 downto 0);
-		when X"7" => BUS_D <= ms_x;
-		when X"8" => BUS_D <= not ms_y;
-		when X"9" => BUS_D <= port_7ffd_reg;
-		when X"A" => BUS_D <= "111" & kb_do_bus;
-		when others => BUS_D <= (others => 'Z');
-	end case;
-end process;
-		
 process (clk_bus)
 begin
 	if clk_bus'event and clk_bus = '1' then
@@ -614,7 +631,6 @@ begin
 		rfsh_n_i	<= reg_rfsh_n_i;
 	end if;
 end process;
-		
 		
 		
 

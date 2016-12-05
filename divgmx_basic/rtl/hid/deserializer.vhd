@@ -1,7 +1,7 @@
 -------------------------------------------------------------------[01.01.2016]
 -- CONTROLLER USB HID scancode to Spectrum matrix conversion
 -------------------------------------------------------------------------------
--- Engineer: 	MVV <mvvproject@gmail.com>
+-- Engineer: MVV <mvvproject@gmail.com>
 
 library IEEE; 
 use IEEE.std_logic_1164.all; 
@@ -70,14 +70,14 @@ begin
 	);
 
 	-- Output addressed row to ULA
-	row0	<= keys(0) when I_ADDR(0) = '0' else (others => '1');
-	row1	<= keys(1) when I_ADDR(1) = '0' else (others => '1');
-	row2	<= keys(2) when I_ADDR(2) = '0' else (others => '1');
-	row3	<= keys(3) when I_ADDR(3) = '0' else (others => '1');
-	row4	<= keys(4) when I_ADDR(4) = '0' else (others => '1');
-	row5	<= keys(5) when I_ADDR(5) = '0' else (others => '1');
-	row6	<= keys(6) when I_ADDR(6) = '0' else (others => '1');
-	row7	<= keys(7) when I_ADDR(7) = '0' else (others => '1');
+	row0 <= keys(0) when I_ADDR(0) = '0' else (others => '1');
+	row1 <= keys(1) when I_ADDR(1) = '0' else (others => '1');
+	row2 <= keys(2) when I_ADDR(2) = '0' else (others => '1');
+	row3 <= keys(3) when I_ADDR(3) = '0' else (others => '1');
+	row4 <= keys(4) when I_ADDR(4) = '0' else (others => '1');
+	row5 <= keys(5) when I_ADDR(5) = '0' else (others => '1');
+	row6 <= keys(6) when I_ADDR(6) = '0' else (others => '1');
+	row7 <= keys(7) when I_ADDR(7) = '0' else (others => '1');
 	
 	-- Keyboard
 	O_KEYBOARD_SCAN		<= row0 and row1 and row2 and row3 and row4 and row5 and row6 and row7;

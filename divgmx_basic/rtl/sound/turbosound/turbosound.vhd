@@ -1,6 +1,8 @@
--------------------------------------------------------------------[06.11.2016]
+-------------------------------------------------------------------[04.12.2016]
 -- TurboSound
 -------------------------------------------------------------------------------
+-- Engineer: MVV <mvvproject@gmail.com>
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -17,22 +19,12 @@ entity turbosound is
 		I_RESET_N	: in std_logic;
 		O_SEL		: out std_logic;
 		-- ssg0
-		I_SSG0_IOA	: in std_logic_vector(7 downto 0);
-		O_SSG0_IOA	: out std_logic_vector(7 downto 0);
-		I_SSG0_IOB	: in std_logic_vector(7 downto 0);
-		O_SSG0_IOB	: out std_logic_vector(7 downto 0);
 		O_SSG0_DA	: out std_logic_vector(7 downto 0);
-		O_SSG0_AUDIO	: out std_logic_vector(7 downto 0);
 		O_SSG0_AUDIO_A	: out std_logic_vector(7 downto 0);
 		O_SSG0_AUDIO_B	: out std_logic_vector(7 downto 0);
 		O_SSG0_AUDIO_C	: out std_logic_vector(7 downto 0);
 		-- ssg1
-		I_SSG1_IOA	: in std_logic_vector(7 downto 0);
-		O_SSG1_IOA	: out std_logic_vector(7 downto 0);
-		I_SSG1_IOB	: in std_logic_vector(7 downto 0);
-		O_SSG1_IOB	: out std_logic_vector(7 downto 0);
 		O_SSG1_DA	: out std_logic_vector(7 downto 0);
-		O_SSG1_AUDIO	: out std_logic_vector(7 downto 0);
 		O_SSG1_AUDIO_A	: out std_logic_vector(7 downto 0);
 		O_SSG1_AUDIO_B	: out std_logic_vector(7 downto 0);
 		O_SSG1_AUDIO_C	: out std_logic_vector(7 downto 0)
@@ -66,7 +58,6 @@ end component;
 begin
 	bdir	<= '1' when (I_M1_N = '1' and I_IORQ_N = '0' and I_WR_N = '0' and I_ADDR(15) = '1' and I_ADDR(1) = '0') else '0';
 	bc1	<= '1' when (I_M1_N = '1' and I_IORQ_N = '0' and I_ADDR(15) = '1' and I_ADDR(14) = '1' and I_ADDR(1) = '0') else '0';
-
 	O_SEL	<= ssg;
 	
 	process(I_CLK, I_RESET_N)

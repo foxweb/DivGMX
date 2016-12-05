@@ -1,10 +1,7 @@
 -------------------------------------------------------------------[21.11.2016]
 -- VGA ZX-Spectum screen
 -------------------------------------------------------------------------------
--- Author:	MVV
---
--- 03.07.2015	Initial release
--------------------------------------------------------------------------------
+-- Engineer: MVV <mvvproject@gmail.com>
 
 library IEEE; 
 use IEEE.std_logic_1164.all; 
@@ -30,7 +27,7 @@ end entity;
 architecture rtl of vga_zx is
 
 -- ZX-Spectum screen
-	constant spec_border_left	: natural :=  32;
+	constant spec_border_left	: natural :=  30;
 	constant spec_screen_h		: natural := 256;
 	constant spec_border_right	: natural :=  32;
 

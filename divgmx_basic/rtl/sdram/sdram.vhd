@@ -1,6 +1,7 @@
--------------------------------------------------------------------[31.03.2014]
--- MT48LC32M8A2-75 Micron 8 Meg x 8 bit x 4 banks SDRAM Controller
+-------------------------------------------------------------------[03.12.2016]
+-- SDRAM Controller
 -------------------------------------------------------------------------------
+-- Engineer: MVV
 
 -- CLK		= 84 MHz	= 11,9047619047619 ns
 -- WR/RD	= 6T		= 71,42857142857143 ns
@@ -11,45 +12,37 @@ use IEEE.std_logic_1164.all;
 use IEEE.numeric_std.all;
 
 entity sdram is
-	port(
-		CLK			: in std_logic;
-		-- Memory port
-		A			: in std_logic_vector(24 downto 0);
-		DI			: in std_logic_vector(7 downto 0);
-		DO			: out std_logic_vector(7 downto 0);
-		DM	 		: in std_logic;
-		WR			: in std_logic;
-		RD			: in std_logic;
-		RFSH			: in std_logic;
-		RFSHREQ			: out std_logic;
-		IDLE			: out std_logic;
-		-- SDRAM Pin
-		CK			: out std_logic;
-		CKE			: out std_logic;
-		RAS_n			: out std_logic;
-		CAS_n			: out std_logic;
-		WE_n			: out std_logic;
-		DQM			: out std_logic;
-		BA1			: out std_logic;
-		BA0			: out std_logic;
-		MA			: out std_logic_vector(12 downto 0);
-		DQ			: inout std_logic_vector(7 downto 0) );
+port (
+	I_CLK		: in std_logic;
+	-- Memory port
+	I_ADDR		: in std_logic_vector(24 downto 0);
+	I_DATA		: in std_logic_vector(7 downto 0);
+	O_DATA		: out std_logic_vector(7 downto 0);
+	I_WR		: in std_logic;
+	I_RD		: in std_logic;
+	I_RFSH		: in std_logic;
+	O_IDLE		: out std_logic;
+	-- SDRAM Pin
+	O_CLK		: out std_logic;
+	O_RAS		: out std_logic;
+	O_CAS		: out std_logic;
+	O_WE		: out std_logic;
+	O_DQM		: out std_logic;
+	O_BA		: out std_logic_vector(1 downto 0);
+	O_MA		: out std_logic_vector(12 downto 0);
+	IO_DQ		: inout std_logic_vector(7 downto 0) );
 end sdram;
 
 architecture rtl of sdram is
 	signal state 		: unsigned(4 downto 0) := "00000";
-	signal address 		: std_logic_vector(24 downto 0);
-	signal rfsh_cnt 	: unsigned(9 downto 0) := "0000000000";
-	signal rfsh_req		: std_logic := '0';
+	signal address 		: std_logic_vector(9 downto 0);
 	signal data_reg		: std_logic_vector(7 downto 0);
-	signal data			: std_logic_vector(7 downto 0);	
+	signal data		: std_logic_vector(7 downto 0);	
 	signal idle1		: std_logic;
-	signal temp			: std_logic_vector(2 downto 0);
-
+	
 	-- SD-RAM control signals
 	signal sdr_cmd		: std_logic_vector(2 downto 0);
-	signal sdr_ba0		: std_logic;
-	signal sdr_ba1		: std_logic;
+	signal sdr_ba		: std_logic_vector(1 downto 0);
 	signal sdr_dqm		: std_logic;
 	signal sdr_a		: std_logic_vector(12 downto 0);
 	signal sdr_dq		: std_logic_vector(7 downto 0);
@@ -62,22 +55,20 @@ architecture rtl of sdram is
 	constant SdrCmd_re 	: std_logic_vector(2 downto 0) := "001"; -- refresh
 	constant SdrCmd_ms 	: std_logic_vector(2 downto 0) := "000"; -- mode regiser set
 
--- Init-------------------------------------------------------	Idle		Read-------	Write------	Refresh----
--- 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12	13		14		15 16 12 13	17 18 12 13
--- pr xx xx re xx xx xx xx xx re xx xx xx xx xx ms xx xx xx xx	xx/ac/re	xx rd xx xx	xx wr xx xx	xx xx xx xx
+-- Init----------------------------------------------------------  Idle      Read----------  Write---------  Refresh-------
+-- 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F 10 11 12 13 14  15        16 17 12 13 14  18 19 12 13 14  10 11 12 13 14
+-- pr xx xx re xx xx xx xx xx re xx xx xx xx xx ms xx xx xx xx xx  xx/ac/re  xx rd xx xx xx  xx wr xx xx xx  xx xx xx xx xx
 
 begin
-	process (CLK)
+	process (I_CLK)
 	begin
-		if CLK'event and CLK = '0' then
-			temp <= RD & WR & RFSH;
+		if (I_CLK'event and I_CLK = '0') then
 			case state is
 				-- Init
 				when "00000" =>					-- s00
 					sdr_cmd <= SdrCmd_pr;			-- PRECHARGE
 					sdr_a <= "1111111111111";
-					sdr_ba1 <= '0';
-					sdr_ba0 <= '0';
+					sdr_ba <= "00";
 					sdr_dqm <= '1';
 					state <= state + 1;
 				when "00011" | "01001" =>			-- s03 s09
@@ -89,91 +80,73 @@ begin
 					state <= state + 1;
 				
 				-- Idle
-				when "10100" =>					-- s14
+				when "10101" =>					-- s15
 					sdr_cmd <= SdrCmd_xx;			-- NOP
 					sdr_dq <= (others => 'Z');
 					idle1 <= '1';
-					
-					if temp(2) /= RD and RD = '1' then
+					if (I_RD = '1') then
 						idle1 <= '0';
-						address <= A;
+						address <= I_ADDR(9 downto 0);
 						sdr_cmd <= SdrCmd_ac;		-- ACTIVE
-						sdr_ba1 <= A(11);
-						sdr_ba0 <= A(10);
-						sdr_a <= A(24 downto 12);					 
-						state <= "10101";		-- s15 Read
-					elsif temp(1) /= WR and WR = '1' then
+						sdr_ba <= I_ADDR(11 downto 10);
+						sdr_a <= I_ADDR(24 downto 12);					 
+						state <= "10110";		-- s16 Read
+					elsif (I_WR = '1') then
 						idle1 <= '0';
-						address <= A;
-						data <= DI;
+						address <= I_ADDR(9 downto 0);
+						data <= I_DATA;
 						sdr_cmd <= SdrCmd_ac;		-- ACTIVE
-						sdr_ba1 <= A(11);
-						sdr_ba0 <= A(10);
-						sdr_a <= A(24 downto 12);
-						state <= "10111";		-- s17 Write
-					elsif temp(0) /= RFSH and RFSH = '1' then
+						sdr_ba <= I_ADDR(11 downto 10);
+						sdr_a <= I_ADDR(24 downto 12);
+						state <= "11000";		-- s18 Write
+					elsif (I_RFSH = '1') then
 						idle1 <= '0';
-						rfsh_req <= '0';
 						sdr_cmd <= SdrCmd_re;		-- REFRESH
 						state <= "10000";		-- s10
 					end if;
 
 				-- A24 A23 A22 A21 A20 A19 A18 A17 A16 A15 A14 A13 A12 A11 A10 A9 A8 A7 A6 A5 A4 A3 A2 A1 A0
-				-- -----------------------ROW------------------------- BA1 BA0 -----------COLUMN------------		
+				-- -----------------------ROW------------------------- BA1 BA0 ----------COLUMN-------------		
 
 				-- Single read - with auto precharge
-				when "10110" =>					-- s16
+				when "10111" =>					-- s17
 					sdr_cmd <= SdrCmd_rd;			-- READ (A10 = 1 enable auto precharge; A9..0 = column)
-					sdr_a <= "001" & address(9 downto 0);
+					sdr_a <= "001" & address;
 					sdr_dqm <= '0';
 					state <= "10010";			-- s12
-					
 				-- Single write - with auto precharge
-				when "11000" =>					-- s18
+				when "11001" =>					-- s19
 					sdr_cmd <= SdrCmd_wr;			-- WRITE (A10 = 1 enable auto precharge; A9..0 = column)
-					sdr_a <= "001" & address(9 downto 0); 
+					sdr_a <= "001" & address;
 					sdr_dq <= data;
-					sdr_dqm <= DM;
+					sdr_dqm <= '0';
 					state <= "10010";			-- s12
-					
 				when others =>
 					sdr_dq <= (others => 'Z');
 					sdr_cmd <= SdrCmd_xx;			-- NOP
 					state <= state + 1;
 			end case;
-
-			-- Providing a distributed AUTO REFRESH command every 7.81us
-			if rfsh_cnt = "1010010001" then				-- (CLK MHz * 1000 * 64 / 8192) = 657 %10 1001 0001
-				rfsh_cnt <= (others => '0');
-				rfsh_req <= '1';
-			else
-				rfsh_cnt <= rfsh_cnt + 1;
-			end if;
-		
 		end if;
 	end process;
 	
-	process (CLK, state, DQ, data_reg, idle1)
+	process (I_CLK, state, IO_DQ, data_reg, idle1)
 	begin
-		if CLK'event and CLK = '1' and idle1 = '0' then
-			if state = "10100" then					-- s14
-				data_reg <= DQ;
+		if (I_CLK'event and I_CLK = '1' and idle1 = '0') then
+			if (state = "10100") then				-- s14
+				data_reg <= IO_DQ;
 			end if;
 		end if;
 	end process;
 	
-	IDLE	<= idle1;
-	DO 	<= data_reg;
-	RFSHREQ	<= rfsh_req;
-	CK 	<= CLK;
-	CKE 	<= '1';
-	RAS_n 	<= sdr_cmd(2);
-	CAS_n 	<= sdr_cmd(1);
-	WE_n 	<= sdr_cmd(0);
-	DQM 	<= sdr_dqm;
-	BA1 	<= sdr_ba1;
-	BA0 	<= sdr_ba0;
-	MA 	<= sdr_a;
-	DQ 	<= sdr_dq;
+	O_IDLE	<= idle1;
+	O_DATA 	<= data_reg;
+	O_CLK 	<= I_CLK;
+	O_RAS 	<= sdr_cmd(2);
+	O_CAS 	<= sdr_cmd(1);
+	O_WE 	<= sdr_cmd(0);
+	O_DQM 	<= sdr_dqm;
+	O_BA	<= sdr_ba;
+	O_MA 	<= sdr_a;
+	IO_DQ 	<= sdr_dq;
 
 end rtl;
