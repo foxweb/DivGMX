@@ -1,10 +1,10 @@
-// megafunction wizard: %RAM: 2-PORT%VBB%
+// megafunction wizard: %RAM: 2-PORT%
 // GENERATION: STANDARD
 // VERSION: WM1.0
 // MODULE: altsyncram 
 
 // ============================================================
-// File Name: cache_addr.v
+// File Name: cache_data.v
 // Megafunction Name(s):
 // 			altsyncram
 //
@@ -16,6 +16,7 @@
 //
 // 13.0.1 Build 232 06/12/2013 SP 1.dp6 SJ Full Version
 // ************************************************************
+
 
 //Copyright (C) 1991-2013 Altera Corporation
 //Your use of Altera Corporation's design tools, logic functions 
@@ -31,7 +32,11 @@
 //Altera or its authorized distributors.  Please refer to the 
 //applicable agreement for further details.
 
-module cache_addr (
+
+// synopsys translate_off
+`timescale 1 ps / 1 ps
+// synopsys translate_on
+module cache_data (
 	clock,
 	data,
 	rdaddress,
@@ -53,6 +58,55 @@ module cache_addr (
 `ifndef ALTERA_RESERVED_QIS
 // synopsys translate_on
 `endif
+
+	wire [15:0] sub_wire0;
+	wire [15:0] q = sub_wire0[15:0];
+
+	altsyncram	altsyncram_component (
+				.address_a (wraddress),
+				.clock0 (clock),
+				.data_a (data),
+				.wren_a (wren),
+				.address_b (rdaddress),
+				.q_b (sub_wire0),
+				.aclr0 (1'b0),
+				.aclr1 (1'b0),
+				.addressstall_a (1'b0),
+				.addressstall_b (1'b0),
+				.byteena_a (1'b1),
+				.byteena_b (1'b1),
+				.clock1 (1'b1),
+				.clocken0 (1'b1),
+				.clocken1 (1'b1),
+				.clocken2 (1'b1),
+				.clocken3 (1'b1),
+				.data_b ({16{1'b1}}),
+				.eccstatus (),
+				.q_a (),
+				.rden_a (1'b1),
+				.rden_b (1'b1),
+				.wren_b (1'b0));
+	defparam
+		altsyncram_component.address_aclr_b = "NONE",
+		altsyncram_component.address_reg_b = "CLOCK0",
+		altsyncram_component.clock_enable_input_a = "BYPASS",
+		altsyncram_component.clock_enable_input_b = "BYPASS",
+		altsyncram_component.clock_enable_output_b = "BYPASS",
+		altsyncram_component.intended_device_family = "Cyclone IV E",
+		altsyncram_component.lpm_type = "altsyncram",
+		altsyncram_component.numwords_a = 512,
+		altsyncram_component.numwords_b = 512,
+		altsyncram_component.operation_mode = "DUAL_PORT",
+		altsyncram_component.outdata_aclr_b = "NONE",
+		altsyncram_component.outdata_reg_b = "UNREGISTERED",
+		altsyncram_component.power_up_uninitialized = "FALSE",
+		altsyncram_component.read_during_write_mode_mixed_ports = "DONT_CARE",
+		altsyncram_component.widthad_a = 9,
+		altsyncram_component.widthad_b = 9,
+		altsyncram_component.width_a = 16,
+		altsyncram_component.width_b = 16,
+		altsyncram_component.width_byteena_a = 1;
+
 
 endmodule
 
@@ -85,7 +139,7 @@ endmodule
 // Retrieval info: PRIVATE: INDATA_REG_B NUMERIC "0"
 // Retrieval info: PRIVATE: INIT_FILE_LAYOUT STRING "PORT_B"
 // Retrieval info: PRIVATE: INIT_TO_SIM_X NUMERIC "0"
-// Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Cyclone III"
+// Retrieval info: PRIVATE: INTENDED_DEVICE_FAMILY STRING "Cyclone IV E"
 // Retrieval info: PRIVATE: JTAG_ENABLED NUMERIC "0"
 // Retrieval info: PRIVATE: JTAG_ID STRING "NONE"
 // Retrieval info: PRIVATE: MAXIMUM_DEPTH NUMERIC "0"
@@ -96,7 +150,7 @@ endmodule
 // Retrieval info: PRIVATE: OUTDATA_ACLR_B NUMERIC "0"
 // Retrieval info: PRIVATE: OUTDATA_REG_B NUMERIC "0"
 // Retrieval info: PRIVATE: RAM_BLOCK_TYPE NUMERIC "0"
-// Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_MIXED_PORTS NUMERIC "1"
+// Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_MIXED_PORTS NUMERIC "2"
 // Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_PORT_A NUMERIC "3"
 // Retrieval info: PRIVATE: READ_DURING_WRITE_MODE_PORT_B NUMERIC "3"
 // Retrieval info: PRIVATE: REGdata NUMERIC "1"
@@ -124,7 +178,7 @@ endmodule
 // Retrieval info: CONSTANT: CLOCK_ENABLE_INPUT_A STRING "BYPASS"
 // Retrieval info: CONSTANT: CLOCK_ENABLE_INPUT_B STRING "BYPASS"
 // Retrieval info: CONSTANT: CLOCK_ENABLE_OUTPUT_B STRING "BYPASS"
-// Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Cyclone III"
+// Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Cyclone IV E"
 // Retrieval info: CONSTANT: LPM_TYPE STRING "altsyncram"
 // Retrieval info: CONSTANT: NUMWORDS_A NUMERIC "512"
 // Retrieval info: CONSTANT: NUMWORDS_B NUMERIC "512"
@@ -132,7 +186,7 @@ endmodule
 // Retrieval info: CONSTANT: OUTDATA_ACLR_B STRING "NONE"
 // Retrieval info: CONSTANT: OUTDATA_REG_B STRING "UNREGISTERED"
 // Retrieval info: CONSTANT: POWER_UP_UNINITIALIZED STRING "FALSE"
-// Retrieval info: CONSTANT: READ_DURING_WRITE_MODE_MIXED_PORTS STRING "OLD_DATA"
+// Retrieval info: CONSTANT: READ_DURING_WRITE_MODE_MIXED_PORTS STRING "DONT_CARE"
 // Retrieval info: CONSTANT: WIDTHAD_A NUMERIC "9"
 // Retrieval info: CONSTANT: WIDTHAD_B NUMERIC "9"
 // Retrieval info: CONSTANT: WIDTH_A NUMERIC "16"
@@ -150,10 +204,10 @@ endmodule
 // Retrieval info: CONNECT: @data_a 0 0 16 0 data 0 0 16 0
 // Retrieval info: CONNECT: @wren_a 0 0 0 0 wren 0 0 0 0
 // Retrieval info: CONNECT: q 0 0 16 0 @q_b 0 0 16 0
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr.v TRUE
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr.inc FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr.cmp FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr.bsf FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr_inst.v FALSE
-// Retrieval info: GEN_FILE: TYPE_NORMAL cache_addr_bb.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data.v TRUE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data.inc FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data.cmp FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data.bsf FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data_inst.v FALSE
+// Retrieval info: GEN_FILE: TYPE_NORMAL cache_data_bb.v FALSE
 // Retrieval info: LIB_FILE: altera_mf

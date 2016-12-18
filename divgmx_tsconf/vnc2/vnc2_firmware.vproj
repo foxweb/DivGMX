@@ -1,7 +1,7 @@
 <Project>
 	<Version>1.2</Version>
-	<ProjectName>u16_vnc2_firmware</ProjectName>
-	<ProjectLocation>C:\work\reverse\u16\fpga\nes\nes\vnc2</ProjectLocation>
+	<ProjectName>vnc2_firmware</ProjectName>
+	<ProjectLocation>C:\work</ProjectLocation>
 	<ProjectSolution>firmware</ProjectSolution>
 	<ProjectVersion>1.0</ProjectVersion>
 	<OutputDir></OutputDir>
@@ -334,7 +334,7 @@
 		</Driver>
 	</AppWizard>
 	<Files>
-		<filename>u16_vnc2_firmware_build.c</filename>
+		<filename>vnc2_firmware_build.c</filename>
 		<fileDir></fileDir>
 		<fileType>1</fileType>
 		<isFileDirty>false</isFileDirty>
@@ -344,7 +344,7 @@
 	<SetProjectVersion>false</SetProjectVersion>
 	<IncludeReflasher>true</IncludeReflasher>
 	<BuildList>
-		<filename>u16_vnc2_firmware_build.c</filename>
+		<filename>vnc2_firmware_build.c</filename>
 	</BuildList>
 	<LibraryFiles>
 		<fileDir></fileDir>
@@ -543,7 +543,7 @@
 		<VirtualFolder>{00000000-0000-0000-0000-000000000006}</VirtualFolder>
 	</LibraryFiles>	
 	<OpenFilesList>
-		<filename>u16_vnc2_firmware_build.c</filename>
+		<filename>vnc2_firmware_build.c</filename>
 		<actvieTabIndex>0</actvieTabIndex>
 	</OpenFilesList>
 </Project>

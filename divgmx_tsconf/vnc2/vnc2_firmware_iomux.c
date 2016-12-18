@@ -1,5 +1,5 @@
 /*
-** Filename: u16_vnc2_firmware_iomux.c
+** Filename: vnc2_firmware_iomux.c
 **
 ** Automatically created by Application Wizard 2.0.2
 ** 
