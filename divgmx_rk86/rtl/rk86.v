@@ -1,4 +1,4 @@
-// Modified for DivGMX rev.A By MVV (build 20161218)
+// Modified for DivGMX rev.A By MVV (build 20161224)
 
 // ====================================================================
 //                Radio-86RK FPGA REPLICA
@@ -105,28 +105,25 @@ wire reset = !clock_locked || !BUF_NNMI || k_reset;
 
 // MEMORY
 wire[7:0] rom_o;
-
-assign DRAM_CLK = clk50mhz;		// SDRAM Clock
 wire[7:0] dramout;
 
-SDRAM_Controller ramd(
-	.clk50mhz	(clk50mhz),	// Clock 50MHz
-	.reset		(reset),	// System reset
-	.DRAM_DQ	(DRAM_DQ),	// SDRAM Data bus 8 Bits
-	.DRAM_ADDR	(DRAM_A),	// SDRAM Address bus 12 Bits
-	.DRAM_DQM	(DRAM_DQM),	// SDRAM Data Mask 
-	.DRAM_WE_N	(DRAM_NWE),	// SDRAM Write Enable
-	.DRAM_CAS_N	(DRAM_NCAS),	// SDRAM Column Address Strobe
-	.DRAM_RAS_N	(DRAM_NRAS),	// SDRAM Row Address Strobe
-	.DRAM_CS_N	(),		// SDRAM Chip Select
-	.DRAM_BA_0	(DRAM_BA[0]),	// SDRAM Bank Address 0
-	.DRAM_BA_1	(DRAM_BA[1]),	// SDRAM Bank Address 1
-	.iaddr		(vid_rd ? {3'b000,vid_addr[14:0]} : {3'b000,addrbus[14:0]}),
-	.idata		(cpu_o),
-	.rd		(vid_rd ? 1'b1 : cpu_rd&(!addrbus[15])),
-	.we_n		(vid_rd? 1'b1 : cpu_wr_n|addrbus[15]),
-	.odata		(dramout)
-);
+sdram ramd(
+	.I_CLK		(clk50mhz),
+	.I_ADDR		(vid_rd ? {3'b000000,vid_addr[14:0]} : {3'b000000,addrbus[14:0]}),
+	.I_DATA		(cpu_o),
+	.O_DATA		(dramout),
+	.I_WR		(vid_rd ? 1'b0 : !(cpu_wr_n | addrbus[15])),
+	.I_RD		(vid_rd ? 1'b1 : cpu_rd & (!addrbus[15])),
+	.I_RFSH		(1'b1),
+	.O_CLK		(DRAM_CLK),
+	.O_RAS		(DRAM_NRAS),
+	.O_CAS		(DRAM_NCAS),
+	.O_WE		(DRAM_NWE),
+	.O_DQM		(DRAM_DQM),
+	.O_BA		(DRAM_BA),
+	.O_MA		(DRAM_A),
+	.IO_DQ		(DRAM_DQ) );
+
 wire[7:0] mem_o = dramout[7:0];
 
 biossd rom(
