@@ -31,9 +31,9 @@
 
 #define ON 1
 #define OFF 0
-#define PKGSTARTPIN GPIO_A_1
+#define PKGSTARTPIN GPIO_A_3
 #define LEDPIN GPIO_A_2
-//#define NEWMODEPIN GPIO_A_3
+//#define NEWMODEPIN GPIO_A_1
 
 
 void firmware(uint8 hostId, uint8 hidId);

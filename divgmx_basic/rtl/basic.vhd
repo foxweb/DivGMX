@@ -1,12 +1,10 @@
--------------------------------------------------------------------[04.12.2016]
--- FPGA SoftCore - Basic build 20161204
+-------------------------------------------------------------------[25.12.2016]
+-- FPGA SoftCore - Basic build 20161225
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
 --
 -- https://github.com/mvvproject/DivGMX
---
--- Copyright (c) 2016 Vladislav Matlash
 --
 -- All rights reserved
 --
@@ -107,6 +105,7 @@ signal clk_vga		: std_logic;
 signal clk_tmds		: std_logic;
 signal clk_bus		: std_logic;
 signal clk_sdr		: std_logic;
+signal clk_saa		: std_logic;
 
 signal sync_hsync	: std_logic;
 signal sync_vsync	: std_logic;
@@ -160,7 +159,7 @@ signal divmmc_ncs	: std_logic;
 signal divmmc_sclk	: std_logic;
 signal divmmc_mosi	: std_logic;
 -- SDRAM
-signal sdr_do_bus	: std_logic_vector(7 downto 0);
+signal sdr_do	: std_logic_vector(7 downto 0);
 signal sdr_wr		: std_logic;
 signal sdr_rd		: std_logic;
 signal sdr_rfsh		: std_logic;
@@ -206,6 +205,10 @@ signal ena_cnt		: std_logic_vector(5 downto 0);
 -- I2C
 --signal i2c_do_bus	: std_logic_vector(7 downto 0);
 --signal i2c_wr		: std_logic;
+-- SAA1099
+signal saa_wr_n		: std_logic;
+signal saa_out_l	: std_logic_vector(7 downto 0);
+signal saa_out_r	: std_logic_vector(7 downto 0); 
 
 --Вывод изображения на HDMI со звуком +
 --DivMMC/Z-Controller +
@@ -214,7 +217,24 @@ signal ena_cnt		: std_logic_vector(5 downto 0);
 --Kempston mouse +
 --SounDrive +
 --Turbo Sound +
+--Turbo Sound Easy +
 --Чтение порта #7FFD +
+--General Sound
+--SAA1099 +
+
+component saa1099
+port (
+	clk_sys		: in std_logic;
+	ce		: in std_logic;		--8 MHz
+	rst_n		: in std_logic;
+	cs_n		: in std_logic;
+	a0		: in std_logic;		--0=data, 1=address
+	wr_n		: in std_logic;
+	din		: in std_logic_vector(7 downto 0);
+	out_l		: out std_logic_vector(7 downto 0);
+	out_r		: out std_logic_vector(7 downto 0));
+end component;
+
 
 begin
 
@@ -227,7 +247,8 @@ port map (
 	c0		=> clk_vga,	--  25.20 MHz
 	c1		=> clk_tmds,	-- 126.00 MHz
 	c2		=> clk_bus,	--  28.00 MHz
-	c3		=> clk_sdr);	--  84.00 MHz
+	c3		=> clk_sdr,	--  84.00 MHz
+	c4		=> clk_saa);	--   8.00 MHz
 
 -- HDMI
 U2: entity work.hdmi
@@ -306,7 +327,7 @@ port map (
 	-- Memory port
 	I_ADDR		=> "0000" & ram_addr & a_i(12 downto 0),
 	I_DATA		=> d_i,
-	O_DATA		=> sdr_do_bus,
+	O_DATA		=> sdr_do,
 	I_WR		=> sdr_wr,
 	I_RD		=> sdr_rd,
 	I_RFSH		=> sdr_rfsh,
@@ -447,15 +468,27 @@ port map(
 -- I2C Controller
 --U15: entity work.i2c
 --port map (
---	I_RESET			=> not reset_n_i,
---	I_CLK			=> clk_bus,
---	I_ENA			=> ena_0_4375mhz,
---	I_ADDR			=> a_i(4),
---	I_DATA			=> d_i,
---	O_DATA			=> i2c_do_bus,
---	I_WR			=> i2c_wr,
---	IO_I2C_SCL		=> I2C_SCL,
---	IO_I2C_SDA		=> I2C_SDA);
+--	I_RESET		=> not reset_n_i,
+--	I_CLK		=> clk_bus,
+--	I_ENA		=> ena_0_4375mhz,
+--	I_ADDR		=> a_i(4),
+--	I_DATA		=> d_i,
+--	O_DATA		=> i2c_do_bus,
+--	I_WR		=> i2c_wr,
+--	IO_I2C_SCL	=> I2C_SCL,
+--	IO_I2C_SDA	=> I2C_SDA);
+
+U16: saa1099
+port map(
+	clk_sys		=> clk_saa,
+	ce		=> '1',			-- 8 MHz
+	rst_n		=> reset_n_i,
+	cs_n		=> '0',
+	a0		=> a_i(8),		-- 0=data, 1=address
+	wr_n		=> saa_wr_n,
+	din		=> d_i,
+	out_l		=> saa_out_l,
+	out_r		=> saa_out_r);
 
 	
 -------------------------------------------------------------------------------	
@@ -513,6 +546,10 @@ ASDO	<= divmmc_mosi when kb_fn(6) = '1' else zc_mosi;
 NCSO	<= '1';
 
 -------------------------------------------------------------------------------
+-- SAA1099
+saa_wr_n <= '0' when (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = "11111111") else '1';
+
+-------------------------------------------------------------------------------
 -- Регистры
 process (reset_n_i, clk_bus, a_i, port_7ffd_reg, wr_n_i, d_i, iorq_n_i)
 begin
@@ -548,12 +585,12 @@ selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) =
 --		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
 		(others => '1');
 
-process (selector, rom_do, divmmc_do, sdr_do_bus, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms_z, ms_b, ms_x, ms_y, port_7ffd_reg, kb_do_bus)
+process (selector, rom_do, divmmc_do, sdr_do, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms_z, ms_b, ms_x, ms_y, port_7ffd_reg, kb_do_bus)
 begin
 	case selector is
 --		when X"0" => BUS_D <= rom_do;										-- ROM
 		when X"1" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- ROM DivMMC ESXDOS
-		when X"2" => BUS_D <= sdr_do_bus; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';		-- SDRAM
+		when X"2" => BUS_D <= sdr_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- SDRAM
 		-- Ports
 		when X"3" => BUS_D <= "111" & kb_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
 		when X"4" => BUS_D <= divmmc_do; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- DivMMC ESXDOS port
@@ -590,8 +627,8 @@ end process;
 -------------------------------------------------------------------------------
 -- Audio
 beeper	<= (others => port_xxfe_reg(4));
-audio_l	<= ("000" & beeper & "00000") + ("000" & ssg0_a & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_a & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_a & "00000") + ("000" & covox_b & "00000");
-audio_r	<= ("000" & beeper & "00000") + ("000" & ssg0_c & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_c & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_c & "00000") + ("000" & covox_d & "00000");
+audio_l	<= ("000" & beeper & "00000") + ("000" & ssg0_a & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_a & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_a & "00000") + ("000" & covox_b & "00000") + ("000" & saa_out_l & "00000");
+audio_r	<= ("000" & beeper & "00000") + ("000" & ssg0_c & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_c & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_c & "00000") + ("000" & covox_d & "00000") + ("000" & saa_out_r & "00000");
 
 -------------------------------------------------------------------------------
 -- ZX-BUS
