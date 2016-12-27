@@ -1,5 +1,5 @@
--------------------------------------------------------------------[25.12.2016]
--- FPGA SoftCore - Basic build 20161225
+-------------------------------------------------------------------[27.12.2016]
+-- FPGA SoftCore - Basic build 20161227
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
@@ -208,7 +208,9 @@ signal ena_cnt		: std_logic_vector(5 downto 0);
 -- SAA1099
 signal saa_wr_n		: std_logic;
 signal saa_out_l	: std_logic_vector(7 downto 0);
-signal saa_out_r	: std_logic_vector(7 downto 0); 
+signal saa_out_r	: std_logic_vector(7 downto 0);
+
+signal trdos		: std_logic;
 
 --Вывод изображения на HDMI со звуком +
 --DivMMC/Z-Controller +
@@ -374,7 +376,7 @@ port map (
 	I_ADDR		=> a_i(7 downto 0),
 	I_DATA		=> d_i,
 	I_IORQ_N	=> iorq_n_i,
-	I_DOS		=> '0',
+	I_DOS		=> trdos,
 	O_COVOX_A	=> covox_a,
 	O_COVOX_B	=> covox_b,
 	O_COVOX_C	=> covox_c,
@@ -547,16 +549,22 @@ NCSO	<= '1';
 
 -------------------------------------------------------------------------------
 -- SAA1099
-saa_wr_n <= '0' when (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = "11111111") else '1';
+saa_wr_n <= '0' when (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = "11111111" and trdos = '0') else '1';
 
 -------------------------------------------------------------------------------
 -- Регистры
-process (reset_n_i, clk_bus, a_i, port_7ffd_reg, wr_n_i, d_i, iorq_n_i)
+process (reset_n_i, clk_bus, a_i, port_7ffd_reg, wr_n_i, d_i, iorq_n_i, trdos)
 begin
 	if (reset_n_i = '0') then
 		port_7ffd_reg <= "00010000";
+		trdos <= '0';
 	elsif (clk_bus'event and clk_bus = '1') then
 		if (iorq_n_i = '0' and wr_n_i = '0' and a_i = X"7FFD" and port_7ffd_reg(5) = '0') then port_7ffd_reg <= d_i; end if;	-- D7-D6:не используются; D5:1=запрещение расширенной памяти (48K защёлка); D4=номер страницы ПЗУ(0-BASIC128, 1-BASIC48); D3=выбор отображаемой видеостраницы(0-страница в банке 5, 1 - в банке 7); D2-D0=номер страницы ОЗУ подключенной в верхние 16 КБ памяти (с адреса #C000)
+		if (a_i(15 downto 8) = X"3D" and m1_n_i = '0' and mreq_n_i = '0') then
+			trdos <= '1';
+		elsif (a_i(15 downto 14) /= "00" and m1_n_i = '0' and mreq_n_i = '0') then
+			trdos <= '0';
+		end if;
 	end if;
 end process;
 
@@ -566,6 +574,7 @@ begin
 		if (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = X"FE") then port_xxfe_reg <= d_i; end if;	-- D7-D5=не используются; D4=бипер; D3=MIC; D2-D0=цвет бордюра
 	end if;
 end process;
+
 
 ------------------------------------------------------------------------------
 -- Селектор
