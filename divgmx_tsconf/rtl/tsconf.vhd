@@ -1,5 +1,5 @@
--------------------------------------------------------------------[06.11.2016]
--- TSConf (build 20161106) By MVV <mvvproject@gmail.com>
+-------------------------------------------------------------------[31.12.2016]
+-- TSConf (build 20161231) By MVV <mvvproject@gmail.com>
 -- DEVBOARD DivGMX Ultimate rev.A By MVV
 -------------------------------------------------------------------------------
 -- https://github.com/mvvproject/DivGMX
@@ -38,6 +38,11 @@
 -- CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 -- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 -- POSSIBILITY OF SUCH DAMAGE.
+
+
+-- build 20161225	SAA1099
+-- build 20161231	K-Mouse Turbo
+
 
 library IEEE; 
 use IEEE.std_logic_1164.all; 
@@ -105,6 +110,7 @@ architecture rtl of tsconf is
 signal clk_84mhz		: std_logic;
 signal clk_28mhz		: std_logic;
 signal clk_ssg			: std_logic;
+signal clk_saa			: std_logic;
 -- CPU0
 signal cpu_a_bus		: std_logic_vector(15 downto 0);
 signal cpu_do_bus		: std_logic_vector(7 downto 0);
@@ -368,10 +374,18 @@ signal hdmi_d1_sig		: std_logic;
 signal i2c_do_bus		: std_logic_vector(7 downto 0);
 signal i2c_wr			: std_logic;
 -- Mouse
-signal ms_x			: std_logic_vector(7 downto 0);
-signal ms_y			: std_logic_vector(7 downto 0);
-signal ms_z			: std_logic_vector(7 downto 0);
-signal ms_b			: std_logic_vector(7 downto 0);
+signal ms0_x			: std_logic_vector(7 downto 0);
+signal ms0_y			: std_logic_vector(7 downto 0);
+signal ms0_z			: std_logic_vector(7 downto 0);
+signal ms0_b			: std_logic_vector(7 downto 0);
+signal ms1_x			: std_logic_vector(7 downto 0);
+signal ms1_y			: std_logic_vector(7 downto 0);
+signal ms1_z			: std_logic_vector(7 downto 0);
+signal ms1_b			: std_logic_vector(7 downto 0);
+-- SAA1099
+signal saa_wr_n			: std_logic;
+signal saa_out_l		: std_logic_vector(7 downto 0);
+signal saa_out_r		: std_logic_vector(7 downto 0);
 
 -------------------------------------------------------------------------------
 -- COMPONENTS TS Lab
@@ -830,6 +844,19 @@ port (
 	int_n			: out std_logic);
 end component;
 
+component saa1099
+port (
+	clk_sys		: in std_logic;
+	ce		: in std_logic;		--8 MHz
+	rst_n		: in std_logic;
+	cs_n		: in std_logic;
+	a0		: in std_logic;		--0=data, 1=address
+	wr_n		: in std_logic;
+	din		: in std_logic_vector(7 downto 0);
+	out_l		: out std_logic_vector(7 downto 0);
+	out_r		: out std_logic_vector(7 downto 0));
+end component;
+
 -------------------------------------------------------------------------------
 
 begin
@@ -842,7 +869,8 @@ port map (
 	locked			=> locked,
 	c0			=> clk_84mhz,
 	c1			=> clk_28mhz,
-	c2			=> clk_hdmi);
+	c2			=> clk_hdmi,
+	c3			=> clk_saa);
 
 TS01: clock
 port map (
@@ -1389,10 +1417,14 @@ port map(
 	I_RX			=> USB_TXD,
 	I_NEWFRAME		=> USB_IO3,
 	I_ADDR			=> cpu_a_bus(15 downto 8),
-	O_MOUSE_X		=> ms_x,
-	O_MOUSE_Y		=> ms_y,
-	O_MOUSE_Z		=> ms_z,
-	O_MOUSE_BUTTONS		=> ms_b,
+	O_MOUSE0_X		=> ms0_x,
+	O_MOUSE0_Y		=> ms0_y,
+	O_MOUSE0_Z		=> ms0_z,
+	O_MOUSE0_BUTTONS	=> ms0_b,
+	O_MOUSE1_X		=> ms1_x,
+	O_MOUSE1_Y		=> ms1_y,
+	O_MOUSE1_Z		=> ms1_z,
+	O_MOUSE1_BUTTONS	=> ms1_b,
 	O_KEYBOARD_REPORT	=> kb_report,
 	O_KEYBOARD_SCAN		=> kb_do_bus,
 	O_KEYBOARD_SCANCODE	=> key_scancode,
@@ -1529,6 +1561,21 @@ port map (
 	IO_I2C_SCL		=> I2C_SCL,
 	IO_I2C_SDA		=> I2C_SDA);
 	
+U21: saa1099
+port map(
+	clk_sys			=> clk_saa,
+	ce			=> '1',			--8 MHz
+	rst_n			=> not reset,
+	cs_n			=> '0',
+	a0			=> cpu_a_bus(8),	--0=data, 1=address
+	wr_n			=> saa_wr_n,
+	din			=> cpu_do_bus,
+	out_l			=> saa_out_l,
+	out_r			=> saa_out_r);
+	
+
+
+
 -------------------------------------------------------------------------------
 -- Global
 -------------------------------------------------------------------------------
@@ -1568,9 +1615,14 @@ cpu_di_bus <=	rom_do_bus when (loader = '1' and cpu_mreq_n = '0' and cpu_rd_n = 
 		kb_report(47 downto 40) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"0504") else
 		kb_report(55 downto 48) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"0604") else
 		i2c_do_bus when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus( 7 downto 5) = "100" and cpu_a_bus(3 downto 0) = "1100") else -- RTC
-		ms_z(3 downto 0) & '1' & not ms_b(2 downto 0) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FADF") else
-		ms_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FBDF") else
-		not ms_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FFDF") else
+		
+		ms0_z(3 downto 0) & '1' & not ms0_b(2 downto 0) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FADF") else
+		ms0_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FBDF") else
+		not ms0_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FFDF") else
+		
+		ms1_z(3 downto 0) & '1' & not ms1_b(2 downto 0) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7ADF")  else
+		ms1_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7BDF")  else
+		not ms1_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7FDF") else
 		dout_ports when ena_ports = '1' else
 		"11111111";
 
@@ -1628,8 +1680,13 @@ i2c_wr <= '1' when (cpu_a_bus(7 downto 5) = "100" and cpu_a_bus(3 downto 0) = "1
 
 -- Audio
 beeper <= (others => port_xxfe_reg(4));
-sound_left  <= ("000" & beeper & "00000") + ("000" & ssg0_a & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_a & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_a & "00000") + ("000" & covox_b & "00000");
-sound_right <= ("000" & beeper & "00000") + ("000" & ssg0_c & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_c & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_c & "00000") + ("000" & covox_d & "00000");
+sound_left  <= ("000" & beeper & "00000") + ("000" & ssg0_a & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_a & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_a & "00000") + ("000" & covox_b & "00000") + ("000" & saa_out_l & "00000");
+sound_right <= ("000" & beeper & "00000") + ("000" & ssg0_c & "00000") + ("000" & ssg0_b & "00000") + ("000" & ssg1_c & "00000") + ("000" & ssg1_b & "00000") + ("000" & covox_c & "00000") + ("000" & covox_d & "00000") + ("000" & saa_out_r & "00000");
+
+-- SAA1099
+saa_wr_n <= '0' when (cpu_iorq_n = '0' and cpu_wr_n = '0' and cpu_a_bus(7 downto 0) = "11111111") else '1';
+
+
 
 -- ZX-BUS
 BUS_NINT	<= '1';

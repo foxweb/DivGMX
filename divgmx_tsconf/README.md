@@ -1,4 +1,4 @@
-# TS-Conf
+# TS-Conf (build 20161231)
 
 Поддержка проекта: http://forum.tslabs.info/index.php
 
