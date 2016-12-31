@@ -1,5 +1,5 @@
--------------------------------------------------------------------[27.12.2016]
--- FPGA SoftCore - Basic build 20161227
+-------------------------------------------------------------------[31.12.2016]
+-- FPGA SoftCore - Basic build 20161231
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
@@ -189,10 +189,14 @@ signal zc_mosi		: std_logic;
 signal zc_rd		: std_logic;
 signal zc_wr		: std_logic;
 -- Mouse
-signal ms_x		: std_logic_vector(7 downto 0);
-signal ms_y		: std_logic_vector(7 downto 0);
-signal ms_z		: std_logic_vector(7 downto 0);
-signal ms_b		: std_logic_vector(7 downto 0);
+signal ms0_x		: std_logic_vector(7 downto 0);
+signal ms0_y		: std_logic_vector(7 downto 0);
+signal ms0_z		: std_logic_vector(7 downto 0);
+signal ms0_b		: std_logic_vector(7 downto 0);
+signal ms1_x		: std_logic_vector(7 downto 0);
+signal ms1_y		: std_logic_vector(7 downto 0);
+signal ms1_z		: std_logic_vector(7 downto 0);
+signal ms1_b		: std_logic_vector(7 downto 0);
 -- Keyboard
 signal kb_do_bus	: std_logic_vector(4 downto 0);
 signal kb_fn_bus	: std_logic_vector(12 downto 1);
@@ -217,6 +221,7 @@ signal trdos		: std_logic;
 --CMOS (стандарт Mr. Gluk)
 --Kempston joystick/Gamepad
 --Kempston mouse +
+--Kempston mouse turbo (master/slave) +
 --SounDrive +
 --Turbo Sound +
 --Turbo Sound Easy +
@@ -451,10 +456,14 @@ port map(
 	I_RX			=> USB_TXD,
 	I_NEWFRAME		=> USB_IO3,
 	I_ADDR			=> a_i(15 downto 8),
-	O_MOUSE_X		=> ms_x,
-	O_MOUSE_Y		=> ms_y,
-	O_MOUSE_Z		=> ms_z,
-	O_MOUSE_BUTTONS		=> ms_b,
+	O_MOUSE0_X		=> ms0_x,
+	O_MOUSE0_Y		=> ms0_y,
+	O_MOUSE0_Z		=> ms0_z,
+	O_MOUSE0_BUTTONS	=> ms0_b,
+	O_MOUSE1_X		=> ms1_x,
+	O_MOUSE1_Y		=> ms1_y,
+	O_MOUSE1_Z		=> ms1_z,
+	O_MOUSE1_BUTTONS	=> ms1_b,
 	O_KEY0			=> open,--kb_key0,
 	O_KEY1			=> open,--kb_key1,
 	O_KEY2			=> open,--kb_key2,
@@ -587,14 +596,17 @@ selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) =
 		X"5" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '0') else								-- TurboSound SSG0
 		X"6" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '1') else								-- TurboSound SSG1
 		X"7" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 6) = "01" and a_i(4 downto 0) = "10111" and kb_fn(6) = '0') else 			-- Z-Controller
-		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else										-- Mouse port key, z
-		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else										-- Mouse port x
-		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else										-- Mouse port y
-		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else										-- Read port #7FFD
---		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
+		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else										-- Mouse0 port key, z
+		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else										-- Mouse0 port x
+		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else										-- Mouse0 port y
+		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0ADF") else										-- Mouse1 port key, z
+		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0BDF") else										-- Mouse1 port x
+		X"D" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0FDF") else										-- Mouse1 port y
+		X"E" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else										-- Read port #7FFD
+--		X"F" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
 		(others => '1');
 
-process (selector, rom_do, divmmc_do, sdr_do, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms_z, ms_b, ms_x, ms_y, port_7ffd_reg, kb_do_bus)
+process (selector, rom_do, divmmc_do, sdr_do, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms0_z, ms0_b, ms0_x, ms0_y, ms1_z, ms1_b, ms1_x, ms1_y, port_7ffd_reg, kb_do_bus)
 begin
 	case selector is
 --		when X"0" => BUS_D <= rom_do;										-- ROM
@@ -606,11 +618,14 @@ begin
 		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
 		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
 		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
-		when X"8" => BUS_D <= ms_z(3 downto 0) & '1' & not ms_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse port key, z
-		when X"9" => BUS_D <= ms_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse port x
-		when X"A" => BUS_D <= not ms_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse port y
-		when X"B" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
---		when X"C" => BUS_D <= i2c_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- I2C
+		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
+		when X"9" => BUS_D <= ms0_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse0 port x
+		when X"A" => BUS_D <= not ms0_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port y
+		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
+		when X"C" => BUS_D <= ms1_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse1 port x
+		when X"D" => BUS_D <= not ms1_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port y
+		when X"E" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
+--		when X"F" => BUS_D <= i2c_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- I2C
 		when others => BUS_D <= (others => 'Z'); BUS_NROMOE <= '0'; BUF_DIR(1) <= '0'; BUS_NIORQGE <= '0';
 	end case;
 end process;
