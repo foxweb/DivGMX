@@ -38,6 +38,19 @@
 -- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 -- POSSIBILITY OF SUCH DAMAGE.
 
+--build 20161127	Вывод изображения на HDMI со звуком
+--			Чтение порта #7FFD
+--			Kempston mouse
+--			SounDrive
+--build 20161225	DivMMC/Z-Controller
+--build 20161225	Turbo Sound Easy (SAA1099)
+--build 20161231	Kempston mouse turbo (master/slave)
+
+--CMOS (стандарт Mr. Gluk)
+--Kempston joystick/Gamepad
+--General Sound
+
+
 library IEEE; 
 use IEEE.std_logic_1164.all; 
 use IEEE.std_logic_unsigned.all;
@@ -216,18 +229,6 @@ signal saa_out_r	: std_logic_vector(7 downto 0);
 
 signal trdos		: std_logic;
 
---Вывод изображения на HDMI со звуком +
---DivMMC/Z-Controller +
---CMOS (стандарт Mr. Gluk)
---Kempston joystick/Gamepad
---Kempston mouse +
---Kempston mouse turbo (master/slave) +
---SounDrive +
---Turbo Sound +
---Turbo Sound Easy +
---Чтение порта #7FFD +
---General Sound
---SAA1099 +
 
 component saa1099
 port (
@@ -599,9 +600,9 @@ selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) =
 		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else										-- Mouse0 port key, z
 		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else										-- Mouse0 port x
 		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else										-- Mouse0 port y
-		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0ADF") else										-- Mouse1 port key, z
-		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0BDF") else										-- Mouse1 port x
-		X"D" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"0FDF") else										-- Mouse1 port y
+		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7ADF") else										-- Mouse1 port key, z
+		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7BDF") else										-- Mouse1 port x
+		X"D" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FDF") else										-- Mouse1 port y
 		X"E" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else										-- Read port #7FFD
 --		X"F" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
 		(others => '1');
