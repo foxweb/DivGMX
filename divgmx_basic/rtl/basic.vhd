@@ -600,9 +600,9 @@ selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) =
 		X"8" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FADF") else										-- Mouse0 port key, z
 		X"9" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FBDF") else										-- Mouse0 port x
 		X"A" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFDF") else										-- Mouse0 port y
-		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7ADF") else										-- Mouse1 port key, z
-		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7BDF") else										-- Mouse1 port x
-		X"D" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FDF") else										-- Mouse1 port y
+		X"B" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(15) = '0' and a_i(10) = '0' and a_i(8) = '0' and a_i(7 downto 0) = x"DF") else		-- Mouse1 port key, z
+		X"C" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(15) = '0' and a_i(10) = '0' and a_i(8) = '1' and a_i(7 downto 0) = x"DF") else		-- Mouse1 port x
+		X"D" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(15) = '0' and a_i(10) = '1' and a_i(8) = '1' and a_i(7 downto 0) = x"DF") else		-- Mouse1 port y
 		X"E" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"7FFD") else										-- Read port #7FFD
 --		X"F" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 5) = "100" and a_i(3 downto 0) = "1100") else					-- Read port I2C
 		(others => '1');
@@ -619,10 +619,10 @@ begin
 		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
 		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
 		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
-		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
+		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
 		when X"9" => BUS_D <= ms0_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse0 port x
 		when X"A" => BUS_D <= not ms0_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port y
-		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2 downto 0); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
+		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
 		when X"C" => BUS_D <= ms1_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse1 port x
 		when X"D" => BUS_D <= not ms1_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port y
 		when X"E" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
