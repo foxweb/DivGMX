@@ -1615,14 +1615,12 @@ cpu_di_bus <=	rom_do_bus when (loader = '1' and cpu_mreq_n = '0' and cpu_rd_n = 
 		kb_report(47 downto 40) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"0504") else
 		kb_report(55 downto 48) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"0604") else
 		i2c_do_bus when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus( 7 downto 5) = "100" and cpu_a_bus(3 downto 0) = "1100") else -- RTC
-		
-		ms0_z(3 downto 0) & '1' & not ms0_b(2 downto 0) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FADF") else
-		ms0_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FBDF") else
-		not ms0_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = X"FFDF") else
-		
-		ms1_z(3 downto 0) & '1' & not ms1_b(2 downto 0) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7ADF")  else
-		ms1_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7BDF")  else
-		not ms1_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"7FDF") else
+		ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"FADF")  else	-- Mouse0
+		ms0_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"FBDF")  else
+		not ms0_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus = x"FFDF") else
+		ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1) when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus(15) = '0' and cpu_a_bus(10) = '0' and cpu_a_bus(8) = '0' and cpu_a_bus(7 downto 0) = X"DF") else	-- Mouse1
+		ms1_x when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus(15) = '0' and cpu_a_bus(10) = '0' and cpu_a_bus(8) = '1' and cpu_a_bus(7 downto 0) = X"DF") else
+		not ms1_y when (cpu_iorq_n = '0' and cpu_rd_n = '0' and cpu_a_bus(15) = '0' and cpu_a_bus(10) = '1' and cpu_a_bus(8) = '1' and cpu_a_bus(7 downto 0) = X"DF") else
 		dout_ports when ena_ports = '1' else
 		"11111111";
 
