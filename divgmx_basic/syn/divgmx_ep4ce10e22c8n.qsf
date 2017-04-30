@@ -36,8 +36,8 @@
 # -------------------------------------------------------------------------- #
 
 
-set_global_assignment -name FAMILY "Cyclone III"
-set_global_assignment -name DEVICE EP3C10E144C8
+set_global_assignment -name FAMILY "Cyclone IV E"
+set_global_assignment -name DEVICE EP4CE10E22C8
 set_global_assignment -name TOP_LEVEL_ENTITY basic
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION "13.0 SP1.DP6"
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "09:23:17  OCTOBER 27, 2016"
@@ -61,6 +61,12 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
+set_global_assignment -name DEVICE_FILTER_PACKAGE TQFP
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 144
+set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 8
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
+set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "0 MHz" -to DCLK
 set_location_assignment PIN_23 -to CLK_50MHZ
 set_location_assignment PIN_8 -to NCSO
 set_location_assignment PIN_144 -to TMDS[7]
@@ -71,11 +77,6 @@ set_location_assignment PIN_129 -to TMDS[3]
 set_location_assignment PIN_128 -to TMDS[2]
 set_location_assignment PIN_113 -to TMDS[1]
 set_location_assignment PIN_112 -to TMDS[0]
-set_global_assignment -name DEVICE_FILTER_PACKAGE TQFP
-set_global_assignment -name DEVICE_FILTER_PIN_COUNT 144
-set_global_assignment -name DEVICE_FILTER_SPEED_GRADE 8
-set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
-set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_location_assignment PIN_91 -to BUF_NRESET
 set_location_assignment PIN_124 -to BUS_A[15]
 set_location_assignment PIN_121 -to BUS_A[14]
@@ -146,7 +147,6 @@ set_location_assignment PIN_12 -to DCLK
 set_location_assignment PIN_13 -to DATA0
 set_location_assignment PIN_71 -to BUS_NRFSH
 set_location_assignment PIN_70 -to BUS_NM1
-set_instance_assignment -name IO_MAXIMUM_TOGGLE_RATE "0 MHz" -to DCLK
 set_location_assignment PIN_88 -to SD_NDET
 set_location_assignment PIN_111 -to OUT_R
 set_location_assignment PIN_110 -to OUT_L
@@ -154,6 +154,7 @@ set_location_assignment PIN_90 -to USB_TXD
 set_location_assignment PIN_89 -to USB_IO3
 set_location_assignment PIN_114 -to I2C_SDA
 set_location_assignment PIN_115 -to I2C_SCL
+
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sound/turbosound/saa1099.sv
 set_global_assignment -name VHDL_FILE ../rtl/i2c/i2c.vhd
 set_global_assignment -name VHDL_FILE ../rtl/hid/receiver.vhd
@@ -162,18 +163,27 @@ set_global_assignment -name VHDL_FILE ../rtl/dac/dac.vhd
 set_global_assignment -name VHDL_FILE ../rtl/zc/zcontroller.vhd
 set_global_assignment -name VHDL_FILE ../rtl/sound/soundrive/soundrive.vhd
 set_global_assignment -name VHDL_FILE ../rtl/divmmc/divmmc.vhd
-set_global_assignment -name QIP_FILE ../rtl/pll/altpll0.qip
+set_global_assignment -name QIP_FILE ../rtl/pll/ep4/altpll0.qip
 set_global_assignment -name VHDL_FILE ../rtl/video/vga_zx.vhd
 set_global_assignment -name VHDL_FILE ../rtl/video/sync.vhd
 set_global_assignment -name VHDL_FILE ../rtl/basic.vhd
 set_global_assignment -name VERILOG_FILE ../rtl/hdmi/hdmidataencoder.v
 set_global_assignment -name VHDL_FILE ../rtl/hdmi/hdmi.vhd
 set_global_assignment -name VHDL_FILE ../rtl/hdmi/encoder.vhd
-set_global_assignment -name VHDL_FILE ../rtl/hdmi/altddio_out1.vhd
-set_global_assignment -name QIP_FILE ../rtl/video/vram.qip
-set_global_assignment -name QIP_FILE ../rtl/ram/rom.qip
+set_global_assignment -name VHDL_FILE ../rtl/hdmi/ep4/altddio_out1.vhd
+set_global_assignment -name QIP_FILE ../rtl/video/ep4/vram.qip
+set_global_assignment -name QIP_FILE ../rtl/ram/ep4/rom.qip
 set_global_assignment -name VHDL_FILE ../rtl/sdram/sdram.vhd
 set_global_assignment -name CDF_FILE output_files/Chain1.cdf
 set_global_assignment -name SYSTEMVERILOG_FILE ../rtl/sound/turbosound/ym2149.sv
 set_global_assignment -name VHDL_FILE ../rtl/sound/turbosound/turbosound.vhd
+set_global_assignment -name VHDL_FILE ../rtl/osd/osd.vhd
+set_global_assignment -name QIP_FILE ../rtl/osd/memory/ep4/font.qip
+set_global_assignment -name QIP_FILE ../rtl/osd/memory/ep4/ram.qip
+set_global_assignment -name VHDL_FILE ../rtl/osd/cpu/nz80cpu.vhd
+set_global_assignment -name VHDL_FILE ../rtl/osd/memory/ep4/ram.vhd
+set_global_assignment -name VHDL_FILE ../rtl/osd/memory/ep4/font.vhd
+set_global_assignment -name VHDL_FILE ../rtl/osd/txt/txt.vhd
+set_global_assignment -name QIP_FILE ../rtl/pll/ep4/altpll1.qip
+set_global_assignment -name QIP_FILE ../rtl/ram/ep4/rom1.qip
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

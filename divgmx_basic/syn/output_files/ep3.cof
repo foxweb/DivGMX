@@ -2,7 +2,7 @@
 <cof>
 	<eprom_name>EPCS64</eprom_name>
 	<flash_loader_device>EP3C10</flash_loader_device>
-	<output_filename>output_files/output_file.jic</output_filename>
+	<output_filename>output_files/divgmx_ep3_basic20170429.jic</output_filename>
 	<n_pages>1</n_pages>
 	<width>1</width>
 	<mode>7</mode>
@@ -10,7 +10,7 @@
 		<user_name>Page_0</user_name>
 		<page_flags>1</page_flags>
 		<bit0>
-			<sof_filename>output_files/divgmx.sof</sof_filename>
+			<sof_filename>output_files/divgmx_ep3c10e144c8n.sof</sof_filename>
 		</bit0>
 	</sof_data>
 	<version>5</version>

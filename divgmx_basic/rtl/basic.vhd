@@ -1,5 +1,5 @@
--------------------------------------------------------------------[31.12.2016]
--- FPGA SoftCore - Basic build 20161231
+-------------------------------------------------------------------[29.04.2017]
+-- FPGA SoftCore - Basic build 20170429
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
@@ -45,6 +45,8 @@
 --build 20161225	DivMMC/Z-Controller
 --build 20161225	Turbo Sound Easy (SAA1099)
 --build 20161231	Kempston mouse turbo (master/slave)
+--build 20170112	OSD для отладки
+--build 20170429	clk_bus=112MHz
 
 --CMOS (стандарт Mr. Gluk)
 --Kempston joystick/Gamepad
@@ -119,10 +121,12 @@ signal clk_tmds		: std_logic;
 signal clk_bus		: std_logic;
 signal clk_sdr		: std_logic;
 signal clk_saa		: std_logic;
+signal clk_osd		: std_logic;
 
 signal sync_hsync	: std_logic;
 signal sync_vsync	: std_logic;
 signal sync_blank	: std_logic;
+signal sync_h		: std_logic_vector(9 downto 0);
 signal sync_hcnt	: std_logic_vector(9 downto 0);
 signal sync_vcnt	: std_logic_vector(9 downto 0);
 signal sync_flash	: std_logic;
@@ -131,6 +135,11 @@ signal vga_r		: std_logic_vector(1 downto 0);
 signal vga_g		: std_logic_vector(1 downto 0);
 signal vga_b		: std_logic_vector(1 downto 0);
 signal vga_di		: std_logic_vector(7 downto 0);
+
+signal osd_red		: std_logic_vector(7 downto 0);
+signal osd_green	: std_logic_vector(7 downto 0);
+signal osd_blue		: std_logic_vector(7 downto 0);
+
 -- Audio
 signal beeper		: std_logic_vector(7 downto 0);
 signal audio_l		: std_logic_vector(15 downto 0);
@@ -172,10 +181,11 @@ signal divmmc_ncs	: std_logic;
 signal divmmc_sclk	: std_logic;
 signal divmmc_mosi	: std_logic;
 -- SDRAM
-signal sdr_do	: std_logic_vector(7 downto 0);
+signal sdr_do		: std_logic_vector(7 downto 0);
 signal sdr_wr		: std_logic;
 signal sdr_rd		: std_logic;
 signal sdr_rfsh		: std_logic;
+signal sdr_idle		: std_logic;
 
 signal selector		: std_logic_vector(3 downto 0);
 
@@ -217,8 +227,9 @@ signal kb_fn		: std_logic_vector(12 downto 1);
 signal key		: std_logic_vector(12 downto 1) := "000000000000";
 
 signal ena_1_75mhz	: std_logic;
+signal clk_28		: std_logic;
 --signal ena_0_4375mhz	: std_logic;
-signal ena_cnt		: std_logic_vector(5 downto 0);
+signal ena_cnt		: std_logic_vector(7 downto 0);
 -- I2C
 --signal i2c_do_bus	: std_logic_vector(7 downto 0);
 --signal i2c_wr		: std_logic;
@@ -228,7 +239,7 @@ signal saa_out_l	: std_logic_vector(7 downto 0);
 signal saa_out_r	: std_logic_vector(7 downto 0);
 
 signal trdos		: std_logic;
-
+signal rom1_do		: std_logic_vector(7 downto 0);
 
 component saa1099
 port (
@@ -254,9 +265,8 @@ port map (
 	inclk0		=> CLK_50MHZ,	--  50.00 MHz
 	c0		=> clk_vga,	--  25.20 MHz
 	c1		=> clk_tmds,	-- 126.00 MHz
-	c2		=> clk_bus,	--  28.00 MHz
-	c3		=> clk_sdr,	--  84.00 MHz
-	c4		=> clk_saa);	--   8.00 MHz
+	c2		=> clk_sdr,	--  84.00 MHz
+	c3		=> clk_28);	--  28.00 MHz
 
 -- HDMI
 U2: entity work.hdmi
@@ -271,9 +281,9 @@ port map (
 	I_HSYNC		=> sync_hsync,
 	I_VSYNC		=> sync_vsync,
 	I_BLANK		=> sync_blank,
-	I_RED		=> vga_r & vga_r & vga_r & vga_r,
-	I_GREEN		=> vga_g & vga_g & vga_g & vga_g,
-	I_BLUE		=> vga_b & vga_b & vga_b & vga_b,
+	I_RED		=> osd_red,
+	I_GREEN		=> osd_green,
+	I_BLUE		=> osd_blue,
 	I_AUDIO_PCM_L 	=> audio_l,
 	I_AUDIO_PCM_R	=> audio_r,
 	O_TMDS		=> TMDS);
@@ -283,6 +293,7 @@ U3: entity work.sync
 port map (
 	I_CLK		=> clk_vga,
 	I_EN		=> '1',
+	O_H		=> sync_h,
 	O_HCNT		=> sync_hcnt,
 	O_VCNT		=> sync_vcnt,
 	O_INT		=> open,
@@ -339,7 +350,7 @@ port map (
 	I_WR		=> sdr_wr,
 	I_RD		=> sdr_rd,
 	I_RFSH		=> sdr_rfsh,
-	O_IDLE		=> open,
+	O_IDLE		=> sdr_idle,
 	-- SDRAM Pin
 	O_CLK		=> DRAM_CLK,
 	O_RAS		=> DRAM_NRAS,
@@ -354,6 +365,7 @@ port map (
 U8: entity work.divmmc
 port map (
 	I_CLK		=> clk_bus,
+	I_SCLK		=> clk_28,
 	I_CS		=> kb_fn(6),
 	I_RESET		=> not reset_n_i,
 	I_ADDR		=> a_i,
@@ -415,7 +427,7 @@ port map (
 U11: entity work.zcontroller
 port map (
 	I_RESET		=> not reset_n_i,
-	I_CLK		=> clk_bus,
+	I_CLK		=> clk_28,
 	I_ADDR		=> a_i(5),
 	I_DATA		=> d_i,
 	O_DATA		=> zc_do_bus,
@@ -433,7 +445,7 @@ U12: entity work.dac
 generic map (
 	msbi_g		=> 15)
 port map (
-	I_CLK		=> clk_sdr,
+	I_CLK		=> clk_bus,
 	I_RESET		=> not reset_n_i,
 	I_DATA		=> audio_l,
 	O_DAC		=> OUT_L);
@@ -442,7 +454,7 @@ U13: entity work.dac
 generic map (
 	msbi_g		=> 15)
 port map (
-	I_CLK		=> clk_sdr,
+	I_CLK		=> clk_bus,
 	I_RESET		=> not reset_n_i,
 	I_DATA		=> audio_r,
 	O_DAC		=> OUT_R);	
@@ -502,6 +514,57 @@ port map(
 	out_l		=> saa_out_l,
 	out_r		=> saa_out_r);
 
+U17: entity work.osd
+port map(
+	I_RESET		=> '0',--not reset_n_i,
+	I_CLK_VGA	=> clk_vga,
+	I_CLK_CPU	=> clk_osd,
+	
+	I_P0		=> port_7ffd_reg,
+	I_P1		=> port_xxfe_reg,
+	I_P2		=> ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1),
+	I_P3		=> ms0_x,
+	I_P4		=> ms0_y,
+	I_P5		=> ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1),
+	I_P6		=> ms1_x,
+	I_P7		=> ms1_y,
+	I_P8		=> divmmc_e3reg,
+	I_P9		=> covox_a,
+	I_P10		=> covox_b,
+	I_P11		=> covox_c,
+	I_P12		=> covox_d,
+	I_P13		=> divmmc_amap & kb_fn(6) & kb_fn(7) & kb_fn(5) & trdos & "000",
+	I_P14		=> a_i(15 downto 8),
+	I_P15		=> a_i(7 downto 0),
+	
+	I_KEY		=> not kb_fn(1),
+	I_RED		=> vga_r & vga_r & vga_r & vga_r,
+	I_GREEN		=> vga_g & vga_g & vga_g & vga_g,
+	I_BLUE		=> vga_b & vga_b & vga_b & vga_b,
+	I_HCNT		=> sync_hcnt,
+	I_VCNT		=> sync_vcnt,
+	I_H		=> sync_h,
+	O_RED		=> osd_red,
+	O_GREEN		=> osd_green,
+	O_BLUE		=> osd_blue);
+
+-- PLL1
+U18: entity work.altpll1
+port map (
+	areset		=> '0',
+	locked		=> open,
+	inclk0		=> CLK_50MHZ,	--  50.00 MHz
+	c0		=> clk_osd,	--  40.00 MHz
+	c1		=> clk_saa,	--   8.00 MHz
+	c2		=> clk_bus);	-- 112.00 MHz
+	
+U19: entity work.rom1
+port map (
+	address		=> a_i(13 downto 0),
+	clock		=> clk_bus,
+	q		=> rom1_do);
+
+
 	
 -------------------------------------------------------------------------------	
 -- F6 = Z-Controller/DivMMC
@@ -527,28 +590,51 @@ zc_rd 	<= '1' when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 6) = "01" a
 	
 -------------------------------------------------------------------------------
 -- SDRAM
-sdr_wr <= '1' when mreq_n_i = '0' and wr_n_i = '0' else '0';
-sdr_rd <= not (mreq_n_i or rd_n_i);
-sdr_rfsh <= not rfsh_n_i;
+--sdr_wr <= not (mreq_n_i or wr_n_i);
+--sdr_rd <= not (mreq_n_i or rd_n_i);
+--sdr_rfsh <= not rfsh_n_i;
+
+process (clk_sdr, mreq_n_i, wr_n_i, rd_n_i, rfsh_n_i)
+variable st 	: std_logic_vector(1 downto 0);
+begin
+	if clk_sdr'event and clk_sdr = '1' then
+		case st is
+			when "00" =>
+				if mreq_n_i = '0' and wr_n_i = '0' then sdr_wr <= '1'; st := "01"; end if;
+				if mreq_n_i = '0' and rd_n_i = '0' then sdr_rd <= '1'; st := "01";  end if;
+				if rfsh_n_i = '0' then sdr_rfsh <= '1'; st := "01"; end if;
+			when "01" =>
+				if sdr_idle = '0' then sdr_wr <= '0'; sdr_rd <= '0'; sdr_rfsh <= '0'; st := "10"; end if;
+			when "10" =>
+				if sdr_idle = '1' and (mreq_n_i = '1' or rfsh_n_i = '1') then st := "00"; end if;
+			when others => null;
+		end case;
+	end if;
+end process;
+
+
+
+
+
 
 -------------------------------------------------------------------------------
 -- Clock
 process (clk_bus)
 begin
-	if clk_bus' event and clk_bus = '0' then
+	if clk_bus'event and clk_bus = '0' then
 		ena_cnt <= ena_cnt + 1;
 	end if;
 end process;
 
-ena_1_75mhz <= ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
---ena_0_4375mhz <= ena_cnt(5) and ena_cnt(4) and ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
+ena_1_75mhz <= ena_cnt(5) and ena_cnt(4) and ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
+--ena_0_4375mhz <= ena_cnt(7) and ena_cnt(6) and ena_cnt(5) and ena_cnt(4) and ena_cnt(3) and ena_cnt(2) and ena_cnt(1) and ena_cnt(0);
 	
 --areset <= not reset_n_i;	-- глобальный сброс
 
 -------------------------------------------------------------------------------
 -- Video
 vram_scr <= '1' when (ram_addr = "00001110") else '0';
-vram_wr  <= '1' when (mreq_n_i = '0' and wr_n_i = '0' and ((ram_addr = "00001010") or (ram_addr = "00001110"))) else '0';
+vram_wr  <= '1' when (mreq_n_i = '0' and wr_n_i = '0' and (ram_addr = "00001010" or ram_addr = "00001110")) else '0';
 
 -------------------------------------------------------------------------------
 -- SD DIVMMC/Z-Controller/SPIFLASH
@@ -566,7 +652,7 @@ saa_wr_n <= '0' when (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = "111
 process (reset_n_i, clk_bus, a_i, port_7ffd_reg, wr_n_i, d_i, iorq_n_i, trdos)
 begin
 	if (reset_n_i = '0') then
-		port_7ffd_reg <= "00010000";
+		port_7ffd_reg <= (others => '0');
 		trdos <= '0';
 	elsif (clk_bus'event and clk_bus = '1') then
 		if (iorq_n_i = '0' and wr_n_i = '0' and a_i = X"7FFD" and port_7ffd_reg(5) = '0') then port_7ffd_reg <= d_i; end if;	-- D7-D6:не используются; D5:1=запрещение расширенной памяти (48K защёлка); D4=номер страницы ПЗУ(0-BASIC128, 1-BASIC48); D3=выбор отображаемой видеостраницы(0-страница в банке 5, 1 - в банке 7); D2-D0=номер страницы ОЗУ подключенной в верхние 16 КБ памяти (с адреса #C000)
@@ -588,9 +674,11 @@ end process;
 
 ------------------------------------------------------------------------------
 -- Селектор
-selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) = "00" and divmmc_amap = '0' and divmmc_e3reg(7) = '0') else			-- ROM #0000-#3FFF
+selector <=	
 		X"1" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "000" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS ROM #0000-#1FFF
 		X"2" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "001" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS RAM #2000-#3FFF
+
+		X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) = "00" and kb_fn(5) = '1') else						-- ROM #0000-#3FFF
 		-- Ports
 		X"3" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"FE" and kb_fn(7) = '1') else							-- Read port #xxFE Keyboard
 		X"4" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"EB" and kb_fn(6) = '1') else							-- DivMMC ESXDOS port
@@ -610,27 +698,34 @@ selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) =
 process (selector, rom_do, divmmc_do, sdr_do, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms0_z, ms0_b, ms0_x, ms0_y, ms1_z, ms1_b, ms1_x, ms1_y, port_7ffd_reg, kb_do_bus)
 begin
 	case selector is
---		when X"0" => BUS_D <= rom_do;										-- ROM
-		when X"1" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- ROM DivMMC ESXDOS
-		when X"2" => BUS_D <= sdr_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- SDRAM
+		when X"0" => BUS_D <= rom1_do;			-- ROM
+		when X"1" => BUS_D <= rom_do;			-- ROM DivMMC ESXDOS
+		when X"2" => BUS_D <= sdr_do;			-- RAM DivMMC ESXDOS
 		-- Ports
-		when X"3" => BUS_D <= "111" & kb_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
-		when X"4" => BUS_D <= divmmc_do; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- DivMMC ESXDOS port
-		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
-		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
-		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
-		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
-		when X"9" => BUS_D <= ms0_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse0 port x
-		when X"A" => BUS_D <= not ms0_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port y
-		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
-		when X"C" => BUS_D <= ms1_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse1 port x
-		when X"D" => BUS_D <= not ms1_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port y
-		when X"E" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
---		when X"F" => BUS_D <= i2c_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- I2C
-		when others => BUS_D <= (others => 'Z'); BUS_NROMOE <= '0'; BUF_DIR(1) <= '0'; BUS_NIORQGE <= '0';
+		when X"3" => BUS_D <= "111" & kb_do_bus;	-- Read port #xxFE Keyboard
+		when X"4" => BUS_D <= divmmc_do;		-- DivMMC ESXDOS port
+		when X"5" => BUS_D <= ssg0_do_bus;		-- TurboSound SSG0
+		when X"6" => BUS_D <= ssg1_do_bus;		-- TurboSound SSG1
+		when X"7" => BUS_D <= zc_do_bus;		-- Z-Controller
+		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1);		-- Mouse0 port key, z
+		when X"9" => BUS_D <= ms0_x;			-- Mouse0 port x
+		when X"A" => BUS_D <= not ms0_y;		-- Mouse0 port y
+		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1);		-- Mouse1 port key, z
+		when X"C" => BUS_D <= ms1_x;			-- Mouse1 port x
+		when X"D" => BUS_D <= not ms1_y;		-- Mouse1 port y
+		when X"E" => BUS_D <= port_7ffd_reg;		-- Read port #7FFD
+--		when X"F" => BUS_D <= i2c_do_bus;		-- I2C
+		when others => BUS_D <= (others => 'Z');
 	end case;
 end process;
-		
+
+
+BUS_NIORQGE	<= '0' when selector = X"0" or selector = X"1" or selector = X"2" or selector = X"F" else '1';	-- 1=блокируем порта в/в на шине Спектрума
+BUS_NROMOE	<= '1' when selector = X"0" or selector = X"1" or selector = X"2" else '0';			-- 1=блокируем ПЗУ Спектрума
+BUF_DIR(1)	<= '0' when selector = X"F" else '1';								-- 1=данные от FPGA, 0=данные к FPGA
+
+
+
 mux <= ((divmmc_amap or divmmc_e3reg(7)) and kb_fn(6)) & a_i(15 downto 13);
 
 process (mux, port_7ffd_reg, ram_addr, divmmc_e3reg)
@@ -669,31 +764,45 @@ BUS_NWR		<= 'Z';
 BUS_NM1		<= 'Z';
 BUS_NRFSH	<= 'Z';
 
+--process (clk_bus)
+--begin
+--	if clk_bus'event and clk_bus = '1' then
+--		reg_mreq_n_i	<= BUS_NMREQ;
+--		reg_iorq_n_i	<= BUS_NIORQ;
+--		reg_rd_n_i	<= BUS_NRD;
+--		reg_wr_n_i	<= BUS_NWR;
+--		reg_a_i		<= BUS_A;
+--		reg_d_i		<= BUS_D;
+--		reg_reset_n_i	<= BUF_NRESET;
+--		reg_m1_n_i	<= BUS_NM1;
+--		reg_rfsh_n_i	<= BUS_NRFSH;
+--		
+--		mreq_n_i	<= reg_mreq_n_i;
+--		iorq_n_i	<= reg_iorq_n_i;
+--		rd_n_i		<= reg_rd_n_i;
+--		wr_n_i		<= reg_wr_n_i;
+--		a_i		<= reg_a_i;
+--		d_i		<= reg_d_i;
+--		reset_n_i	<= reg_reset_n_i;
+--		m1_n_i		<= reg_m1_n_i;
+--		rfsh_n_i	<= reg_rfsh_n_i;
+--	end if;
+--end process;
+		
 process (clk_bus)
 begin
 	if clk_bus'event and clk_bus = '1' then
-		reg_mreq_n_i	<= BUS_NMREQ;
-		reg_iorq_n_i	<= BUS_NIORQ;
-		reg_rd_n_i	<= BUS_NRD;
-		reg_wr_n_i	<= BUS_NWR;
-		reg_a_i		<= BUS_A;
-		reg_d_i		<= BUS_D;
-		reg_reset_n_i	<= BUF_NRESET;
-		reg_m1_n_i	<= BUS_NM1;
-		reg_rfsh_n_i	<= BUS_NRFSH;
-		
-		mreq_n_i	<= reg_mreq_n_i;
-		iorq_n_i	<= reg_iorq_n_i;
-		rd_n_i		<= reg_rd_n_i;
-		wr_n_i		<= reg_wr_n_i;
-		a_i		<= reg_a_i;
-		d_i		<= reg_d_i;
-		reset_n_i	<= reg_reset_n_i;
-		m1_n_i		<= reg_m1_n_i;
-		rfsh_n_i	<= reg_rfsh_n_i;
+		mreq_n_i	<= BUS_NMREQ;
+		iorq_n_i	<= BUS_NIORQ;
+		rd_n_i	<= BUS_NRD;
+		wr_n_i	<= BUS_NWR;
+		a_i		<= BUS_A;
+		d_i		<= BUS_D;
+		reset_n_i	<= BUF_NRESET;
+		m1_n_i	<= BUS_NM1;
+		rfsh_n_i	<= BUS_NRFSH;
 	end if;
 end process;
-		
-		
 
 end rtl;
+
