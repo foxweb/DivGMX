@@ -1,4 +1,4 @@
-; ------------------------------------------------------------------[29.04.2017]
+; ------------------------------------------------------------------[08.05.2017]
 ; DivGMX Test By MVV <mvvproject@gmail.com>
 ; -----------------------------------------------------------------------------
 
@@ -337,7 +337,7 @@ menu
 	db 23,0,0
 ;	db "--------------------------------------------------------------------------------------------------------------------------------"
 
-	db "Board:DivGMX(Ultimate) SoftCore:Basic(build 20170429 By MVV) "
+	db "Board:DivGMX(Ultimate) SoftCore:Basic(build 20170508 By MVV) "
 	db "F1=OSD(nZ80@40MHz,RAM 4K,F5=Std/ROM,F6=ZC/DivMMC,F7=Std/USBKeyb)",13
 	db "System[7FFD:00 xxFE:00 PC:0000 ROM:Std KBD:Std BDI:0]",13
 	db "DivMMC[xxE3:00 AMAP:0 On ] Mouse0[FADF:00 FBDF:00 FFDF:00] "

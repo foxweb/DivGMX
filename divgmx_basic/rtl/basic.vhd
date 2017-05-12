@@ -1,5 +1,5 @@
--------------------------------------------------------------------[29.04.2017]
--- FPGA SoftCore - Basic build 20170429
+-------------------------------------------------------------------[08.05.2017]
+-- FPGA SoftCore - Basic build 20170508
 -- DEVBOARD DivGMX Rev.A
 -------------------------------------------------------------------------------
 -- Engineer: MVV <mvvproject@gmail.com>
@@ -563,8 +563,6 @@ port map (
 	address		=> a_i(13 downto 0),
 	clock		=> clk_bus,
 	q		=> rom1_do);
-
-
 	
 -------------------------------------------------------------------------------	
 -- F6 = Z-Controller/DivMMC
@@ -611,11 +609,6 @@ begin
 		end case;
 	end if;
 end process;
-
-
-
-
-
 
 -------------------------------------------------------------------------------
 -- Clock
@@ -670,7 +663,6 @@ begin
 		if (iorq_n_i = '0' and wr_n_i = '0' and a_i(7 downto 0) = X"FE") then port_xxfe_reg <= d_i; end if;	-- D7-D5=не используются; D4=бипер; D3=MIC; D2-D0=цвет бордюра
 	end if;
 end process;
-
 
 ------------------------------------------------------------------------------
 -- Селектор
@@ -764,45 +756,30 @@ BUS_NWR		<= 'Z';
 BUS_NM1		<= 'Z';
 BUS_NRFSH	<= 'Z';
 
---process (clk_bus)
---begin
---	if clk_bus'event and clk_bus = '1' then
---		reg_mreq_n_i	<= BUS_NMREQ;
---		reg_iorq_n_i	<= BUS_NIORQ;
---		reg_rd_n_i	<= BUS_NRD;
---		reg_wr_n_i	<= BUS_NWR;
---		reg_a_i		<= BUS_A;
---		reg_d_i		<= BUS_D;
---		reg_reset_n_i	<= BUF_NRESET;
---		reg_m1_n_i	<= BUS_NM1;
---		reg_rfsh_n_i	<= BUS_NRFSH;
---		
---		mreq_n_i	<= reg_mreq_n_i;
---		iorq_n_i	<= reg_iorq_n_i;
---		rd_n_i		<= reg_rd_n_i;
---		wr_n_i		<= reg_wr_n_i;
---		a_i		<= reg_a_i;
---		d_i		<= reg_d_i;
---		reset_n_i	<= reg_reset_n_i;
---		m1_n_i		<= reg_m1_n_i;
---		rfsh_n_i	<= reg_rfsh_n_i;
---	end if;
---end process;
-		
 process (clk_bus)
 begin
 	if clk_bus'event and clk_bus = '1' then
-		mreq_n_i	<= BUS_NMREQ;
-		iorq_n_i	<= BUS_NIORQ;
-		rd_n_i	<= BUS_NRD;
-		wr_n_i	<= BUS_NWR;
-		a_i		<= BUS_A;
-		d_i		<= BUS_D;
-		reset_n_i	<= BUF_NRESET;
-		m1_n_i	<= BUS_NM1;
-		rfsh_n_i	<= BUS_NRFSH;
+		reg_mreq_n_i	<= BUS_NMREQ;
+		reg_iorq_n_i	<= BUS_NIORQ;
+		reg_rd_n_i	<= BUS_NRD;
+		reg_wr_n_i	<= BUS_NWR;
+		reg_a_i		<= BUS_A;
+		reg_d_i		<= BUS_D;
+		reg_reset_n_i	<= BUF_NRESET;
+		reg_m1_n_i	<= BUS_NM1;
+		reg_rfsh_n_i	<= BUS_NRFSH;
+		
+		mreq_n_i	<= reg_mreq_n_i;
+		iorq_n_i	<= reg_iorq_n_i;
+		rd_n_i		<= reg_rd_n_i;
+		wr_n_i		<= reg_wr_n_i;
+		a_i		<= reg_a_i;
+		d_i		<= reg_d_i;
+		reset_n_i	<= reg_reset_n_i;
+		m1_n_i		<= reg_m1_n_i;
+		rfsh_n_i	<= reg_rfsh_n_i;
 	end if;
 end process;
-
+		
 end rtl;
 
