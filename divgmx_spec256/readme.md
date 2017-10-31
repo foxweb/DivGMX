@@ -1,5 +1,5 @@
 #### SPEC256
-![image](pic1.jpg) ![image](pic2.jpg)
+![image](pic1.png) ![image](pic2.png)
 
 SPEC256: http://www.emulatronia.com/emusdaqui/spec256/download-eng.htm
 
@@ -12,6 +12,9 @@ SPEC256: http://www.emulatronia.com/emusdaqui/spec256/download-eng.htm
 [![Spec256 on FPGA (ReVerSE-U16)](http://img.youtube.com/vi/0wNCMqNwaIU/0.jpg)](http://www.youtube.com/watch?feature=player_embedded&v=0wNCMqNwaIU)
 
 [![ReVerSE-U16 FPGA SoftCore - Spec256 (build 20170604)](http://img.youtube.com/vi/5JCH4aDUbvE/0.jpg)](https://www.youtube.com/watch?v=5JCH4aDUbvE)
+
+build 20171030:
+- Реализован фон F6 = Layer on/off
 
 build 20171028:
 - CPU: T80_GFX @ 3.5MHz
